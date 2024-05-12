@@ -1,6 +1,7 @@
-mod generator;
 mod uniforms;
+mod generator;
 
+use generator::type_script;
 use clap::Parser;
 
 const DEFAULT_INPUT_FOLDER: &str = "shaders/example.vert";
@@ -38,5 +39,5 @@ fn main() {
         }
     }
 
-    generator::generate_ts_types_file(args.input, args.output);
+    type_script::generate_ts_types_file(args.input, args.output);
 }

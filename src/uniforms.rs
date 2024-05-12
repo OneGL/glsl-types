@@ -65,36 +65,4 @@ impl UniformType {
 
         return Ok(result);
     }
-
-    pub fn to_ts_type(&self) -> String {
-        let result =  match self {
-            UniformType::Sampler2d => "WebGLTexture",
-    
-            UniformType::Float => "number",
-            UniformType::Vec2 => "[number, number]",
-            UniformType::Vec3 => "[number, number, number]",
-            UniformType::Vec4 => "[number, number, number, number]",
-    
-            UniformType::Int => "number",
-            UniformType::Ivec2 => "[number, number]",
-            UniformType::Ivec3 => "[number, number, number]",
-            UniformType::Ivec4 => "[number, number, number, number]",
-    
-            UniformType::Uint => "number",
-            UniformType::Uvec2 => "[number, number]",
-            UniformType::Uvec3 => "[number, number, number]",
-            UniformType::Uvec4 => "[number, number, number, number]",
-            
-            UniformType::Bool => "boolean",
-            UniformType::Bvec2 => "[boolean, boolean]",
-            UniformType::Bvec3 => "[boolean, boolean, boolean]",
-            UniformType::Bvec4 => "[boolean, boolean, boolean, boolean]",
-    
-            UniformType::Mat2 => "[number, number, number, number]",
-            UniformType::Mat3 => "[number, number, number, number, number, number, number, number, number]",
-            UniformType::Mat4 => "[number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number]",
-        };
-    
-        return result.to_string()        
-    }
 }
