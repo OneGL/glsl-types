@@ -5,11 +5,21 @@ varying mat4 modelMatrixFrag;
 uniform float iResolution;
 uniform float iTime;
 
-//Planet parameters tes
-uniform vec3 _PSNoiseOffset;
-uniform float _PSNoiseGlobalScale;
-uniform float _PSWaterHeight;
-uniform float _PSWaterDepthOffset;
+
+
+//Planet parameters
+
+uniform 
+
+    // asdad
+/**/    vec3 // asdad
+    // asdad
+    _PSNoiseOffset// asdad
+    
+    ;
+
+
+uniform float _PSNoiseGlobalScale;uniform float _PSWaterHeight;uniform float _PSWaterDepthOffset;
 uniform float _PSMaxHeightOffset;
 uniform vec3 _PlanetColor1;
 uniform vec3 _PlanetColor2;
@@ -50,7 +60,11 @@ uniform float _CloudNoiseGlobalScale;
 uniform float _SecondaryNoiseStrength;
 uniform float _CloudDensityMultiplier;
 uniform float _CloudDensityOffset;
-uniform float _CloudMoveSpeed;
+uniform 
+    // hello
+    float _CloudMoveSpeed
+    // world
+    ;
 
 uniform float _CloudsStepSize;
 uniform float _CloudsMaxStepCount;
