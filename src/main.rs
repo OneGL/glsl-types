@@ -2,6 +2,7 @@ mod generator;
 mod uniforms;
 
 use clap::Parser;
+use notify::{RecursiveMode, Result, Watcher, Event};
 
 const DEFAULT_INPUT_FOLDER: &str = "shaders/example.vert";
 const DEFAULT_OUTPUT_FOLDER: &str = "shaders";
@@ -25,7 +26,7 @@ struct Args {
     language: String,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
 
     if !args.input.exists() {
@@ -44,11 +45,35 @@ fn main() {
         }
     }
 
-    if args.language == "ts" {
-        generator::type_script::generate_ts_types_file(args.input, args.output);
-    } else if args.language == "rs" {
-        generator::rust::generate_rs_types_file(args.input, args.output);
+    let input = args.input.clone();
+    let output = args.output.clone();
+    let language = args.language.clone();
+
+    let mut watcher = notify::recommended_watcher(move |res: Result<Event>| match res {
+        Ok(event) => {
+            println!("");
+            println!("Detected change inside the shader file: {:?}", event.paths.first().unwrap().to_str().unwrap());
+            generate_types(&input, &output, &language);
+            println!("Types generated for the shader file");
+        }
+        Err(e) => {
+            println!("watch error: {:?}", e);
+        }
+    })?;
+
+    watcher.watch(&args.input, RecursiveMode::Recursive)?;
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+}
+
+fn generate_types(input: &std::path::PathBuf, output: &std::path::PathBuf, language: &str) {
+    if language == "ts" {
+        generator::type_script::generate_ts_types_file(input, output);
+    } else if language == "rs" {
+        generator::rust::generate_rs_types_file(input, output);
     } else {
-        panic!("Unsupported language: {}", args.language);
+        panic!("Unsupported language: {}", language);
     }
 }

@@ -2,7 +2,7 @@ use crate::uniforms::UniformType;
 
 use super::common;
 
-pub fn generate_ts_types_file(file_path: std::path::PathBuf, output_folder: std::path::PathBuf) {
+pub fn generate_ts_types_file(file_path: &std::path::PathBuf, output_folder: &std::path::PathBuf) {
     let file = std::fs::read_to_string(&file_path).unwrap();
     let uniforms = common::extract_uniforms(file);
 
