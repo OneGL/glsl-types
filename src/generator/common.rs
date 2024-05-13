@@ -4,7 +4,7 @@ pub fn capitalize_first_letter(s: &str) -> String {
     s.chars().next().unwrap().to_uppercase().collect::<String>() + &s[1..]
 }
 
-pub fn extract_uniforms(file: String) -> Vec<Uniform> {
+pub fn extract_uniforms(file: &String) -> Vec<Uniform> {
     let mut uniforms = Vec::new();
 
     let file = remove_comments(file);
@@ -50,7 +50,7 @@ pub fn extract_uniforms(file: String) -> Vec<Uniform> {
     return uniforms;
 }
 
-fn remove_comments(file: String) -> String {
+fn remove_comments(file: &String) -> String {
     let mut result = String::new();
     let mut chars = file.chars().peekable();
 

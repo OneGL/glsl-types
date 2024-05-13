@@ -5,8 +5,6 @@ varying mat4 modelMatrixFrag;
 uniform float iResolution;
 uniform float iTime;
 
-
-
 //Planet parameters
 
 uniform 
