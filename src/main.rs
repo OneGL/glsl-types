@@ -1,7 +1,6 @@
-mod uniforms;
 mod generator;
+mod uniforms;
 
-use generator::type_script;
 use clap::Parser;
 
 const DEFAULT_INPUT_FOLDER: &str = "shaders/example.vert";
@@ -18,6 +17,12 @@ struct Args {
     /// Output folder for the generated types
     #[arg(short, long, default_value = DEFAULT_OUTPUT_FOLDER)]
     output: std::path::PathBuf,
+
+    /// Output language
+    /// Supported languages: ts, rs
+    /// Default: ts
+    #[arg(short, long, default_value = "ts")]
+    language: String,
 }
 
 fn main() {
@@ -39,5 +44,11 @@ fn main() {
         }
     }
 
-    type_script::generate_ts_types_file(args.input, args.output);
+    if args.language == "ts" {
+        generator::type_script::generate_ts_types_file(args.input, args.output);
+    } else if args.language == "rs" {
+        generator::rust::generate_rs_types_file(args.input, args.output);
+    } else {
+        panic!("Unsupported language: {}", args.language);
+    }
 }
