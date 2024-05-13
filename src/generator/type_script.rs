@@ -24,13 +24,19 @@ pub fn generate_ts_types_file(file_path: &std::path::PathBuf, output_folder: &st
     let output_file_name = file_path.file_stem().unwrap().to_str().unwrap();
     let output_type_name = common::capitalize_first_letter(output_file_name);
 
+
+
+    // Create program uniforms type
+    let uniforms_type = format!("{}Uniforms", output_type_name);
+    output_file.push_str(&format!("export type {} = {{\n", uniforms_type));
+    for uniform in &uniforms {
+        output_file.push_str(&format!("    {}: {};\n", &uniform.name, &uniform.name));
+    }
+    output_file.push_str("};\n\n");
+
     // Export a type that contains all the uniforms
     output_file.push_str(&format!("export type {} = {{\n", output_type_name));
-    output_file.push_str("    uniforms: {\n");
-    for uniform in uniforms {
-        output_file.push_str(&format!("        {}: {};\n", uniform.name, uniform.name));
-    }
-    output_file.push_str("    };\n");
+    output_file.push_str(&format!("    uniforms: {};\n", uniforms_type));
     output_file.push_str("};\n");
 
     let output_file_path = output_folder.join(format!("{}.ts", output_file_name));
