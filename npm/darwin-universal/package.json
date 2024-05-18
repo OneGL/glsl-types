@@ -1,0 +1,15 @@
+{
+  "name": "glsl-types-darwin-universal",
+  "version": "0.0.0",
+  "os": [
+    "darwin"
+  ],
+  "main": "glsl-types.darwin-universal.node",
+  "files": [
+    "glsl-types.darwin-universal.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}
