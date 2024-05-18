@@ -30,7 +30,7 @@ struct Args {
 }
 
 #[tokio::main]
-pub async fn start(args: Vec<String>) -> String {
+pub async fn start(args: Vec<String>) -> () {
   let args = Args::try_parse_from(args).expect("Failed to parse arguments");
 
   if !args.input_float.exists() {

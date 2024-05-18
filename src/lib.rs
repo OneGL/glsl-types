@@ -9,7 +9,6 @@ mod debounce;
 extern crate napi_derive;
 
 #[napi]
-pub fn start_cli(args: Vec<String>) -> napi::Result<()> {
+pub fn start_cli(args: Vec<String>) -> () {
   cli::start(args);
-  Ok(())
 }
