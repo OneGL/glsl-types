@@ -1,9 +1,8 @@
 #![deny(clippy::all)]
 
 mod cli;
-mod uniforms;
-mod generator;
 mod debounce;
+mod generator;
 
 #[macro_use]
 extern crate napi_derive;

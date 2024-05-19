@@ -83,24 +83,24 @@ pub async fn start(args: Vec<String>) -> () {
     // if the user only creates one of them, we will show an error message
     // and ignore the file.
     let file_folder = file_path.parent().unwrap();
-    let file_stem = file_path.file_stem().unwrap().to_str().unwrap().to_string();
-    let vertex_shader = file_folder.join(file_stem.clone() + ".vert");
-    let fragment_shader = file_folder.join(file_stem.clone() + ".frag");
+    let file_stem: String = file_path.file_stem().unwrap().to_str().unwrap().to_string();
+    let vertex_shader_path = file_folder.join(file_stem.clone() + ".vert");
+    let fragment_shader_path = file_folder.join(file_stem.clone() + ".frag");
 
-    if !vertex_shader.exists() || !fragment_shader.exists() {
+    if !vertex_shader_path.exists() || !fragment_shader_path.exists() {
       print!("{}", "[ERROR]\t".red());
       println!("Missing shader files.");
       println!("");
 
-      if !vertex_shader.exists() {
+      if !vertex_shader_path.exists() {
         println!(
           "Please create a vertex shader file: {}",
-          vertex_shader.to_str().unwrap().blue().underline()
+          vertex_shader_path.to_str().unwrap().blue().underline()
         );
       } else {
         println!(
           "Please create a fragment shader file: {}",
-          fragment_shader.to_str().unwrap().blue().underline()
+          fragment_shader_path.to_str().unwrap().blue().underline()
         );
       }
 
@@ -130,7 +130,12 @@ pub async fn start(args: Vec<String>) -> () {
     );
     // Measure the time it takes to generate the types
     let start = std::time::Instant::now();
-    generate_types(&vertex_shader, &output_folder, &language);
+    generate_types(
+      &vertex_shader_path,
+      &fragment_shader_path,
+      &output_folder,
+      &language,
+    );
     println!(
       " {}",
       format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
@@ -156,9 +161,14 @@ pub async fn start(args: Vec<String>) -> () {
   }
 }
 
-fn generate_types(input: &std::path::PathBuf, output: &std::path::PathBuf, language: &str) {
+fn generate_types(
+  vertex_path: &std::path::PathBuf,
+  fragment_path: &std::path::PathBuf,
+  output: &std::path::PathBuf,
+  language: &str,
+) {
   if language == "ts" {
-    type_script::generate_ts_types_file(input, output);
+    type_script::generate_ts_types_file(vertex_path, fragment_path, output);
   } else {
     panic!("Unsupported language: {}", language);
   }
