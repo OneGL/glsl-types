@@ -3,6 +3,7 @@
 mod cli;
 mod debounce;
 mod generator;
+mod log;
 
 #[macro_use]
 extern crate napi_derive;

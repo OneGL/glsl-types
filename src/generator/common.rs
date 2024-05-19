@@ -40,9 +40,16 @@ pub struct Varying {
 }
 
 #[derive(Clone, Debug)]
+pub struct Attribute {
+  pub name: String,
+  pub attribute_type: TypeSpecifierNonArray,
+}
+
+#[derive(Clone, Debug)]
 pub struct ShaderData {
   pub uniforms: Vec<Uniform>,
   pub varyings: Vec<Varying>,
+  pub attributes: Vec<Attribute>,
   shader_type: ShaderType,
 }
 
@@ -73,10 +80,16 @@ impl Visitor for ShaderData {
                   }
                 }
                 ShaderType::Vertex => {
-                  if storage_qualifier == StorageQualifier::Attribute {
+                  if storage_qualifier == StorageQualifier::Out {
                     self.varyings.push(Varying {
                       name: name.as_str().to_string(),
                       varying_type: declaration.ty.ty.ty.clone(),
+                    });
+                  }
+                  if storage_qualifier == StorageQualifier::In {
+                    self.attributes.push(Attribute {
+                      name: name.as_str().to_string(),
+                      attribute_type: declaration.ty.ty.ty.clone(),
                     });
                   }
                 }
@@ -96,6 +109,7 @@ pub fn extract_shader_data(file: &String, file_path: &std::path::PathBuf) -> Sha
   let mut shader_data = ShaderData {
     uniforms: Vec::new(),
     varyings: Vec::new(),
+    attributes: Vec::new(),
     shader_type: get_shader_type(file_path),
   };
 

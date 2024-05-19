@@ -118,11 +118,11 @@ pub fn generate_ts_types_file(
   }
   output_file.push_str("    },\n");
   output_file.push_str("    attributes: {\n");
-  for attribute in &vertex_data.varyings {
+  for attribute in &vertex_data.attributes {
     output_file.push_str(&format!(
       "        {}: \"{}\",\n",
       &attribute.name,
-      convert_glsl_to_ts_label(&attribute.varying_type)
+      convert_glsl_to_ts_label(&attribute.attribute_type)
     ));
   }
   output_file.push_str("    },\n");
