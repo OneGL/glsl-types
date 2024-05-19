@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use crate::generator::type_script;
 use crate::log;
-use crate::{debounce, log::log};
+use crate::{debounce, log::print_level};
 use clap::Parser;
 use colored::Colorize;
 use notify::{Event, RecursiveMode, Result, Watcher};
@@ -57,13 +57,11 @@ pub async fn start(args: Vec<String>) -> () {
   print!("\x1B[2J\x1B[1;1H");
   println!("{}", "GLSL Types Generator".bold());
 
-  log(
-    format!(
-      "Watching for changes in the folder: {}",
-      input_folder.to_str().unwrap().cyan()
-    )
-    .as_str(),
-    log::Level::INFO,
+  print_level(log::Level::INFO);
+
+  println!(
+    "Watching for changes in the folder: {}",
+    input_folder.to_str().unwrap().cyan()
   );
 
   let debounced = debounce::Debouncer::new(Duration::from_millis(10), move |event: Event| {
@@ -93,13 +91,10 @@ pub async fn start(args: Vec<String>) -> () {
     let fragment_shader_path = file_folder.join(file_stem.clone() + ".frag");
 
     if !vertex_shader_path.exists() || !fragment_shader_path.exists() {
-      log(
-        format!(
-          "Missing shader files: {}",
-          file_path.to_str().unwrap().cyan()
-        )
-        .as_str(),
-        log::Level::ERROR,
+      print_level(log::Level::ERROR);
+      println!(
+        "Missing shader files: {}",
+        file_path.to_str().unwrap().cyan()
       );
       println!("");
 
@@ -133,27 +128,26 @@ pub async fn start(args: Vec<String>) -> () {
       return;
     }
 
-    log(
-      format!(
-        "Types generated for the shader file: {}",
-        file_path.to_str().unwrap().blue().underline()
-      )
-      .as_str(),
-      log::Level::INFO,
-    );
-
     // Measure the time it takes to generate the types
     let start = std::time::Instant::now();
-    generate_types(
+    let success = type_script::generate_ts_types_file(
       &vertex_shader_path,
       &fragment_shader_path,
       &output_folder,
-      &language,
     );
-    println!(
-      " {}",
-      format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
-    );
+
+    if success {
+      print_level(log::Level::INFO);
+      print!(
+        "Types generated for the shader file: {}",
+        file_path.to_str().unwrap().blue().underline()
+      );
+
+      println!(
+        " {}",
+        format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
+      );
+    }
   });
 
   let mut watcher = notify::recommended_watcher(move |res: Result<Event>| match res {
@@ -172,18 +166,5 @@ pub async fn start(args: Vec<String>) -> () {
 
   loop {
     std::thread::sleep(std::time::Duration::from_millis(100));
-  }
-}
-
-fn generate_types(
-  vertex_path: &std::path::PathBuf,
-  fragment_path: &std::path::PathBuf,
-  output: &std::path::PathBuf,
-  language: &str,
-) {
-  if language == "ts" {
-    type_script::generate_ts_types_file(vertex_path, fragment_path, output);
-  } else {
-    panic!("Unsupported language: {}", language);
   }
 }

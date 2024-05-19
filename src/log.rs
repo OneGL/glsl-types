@@ -6,7 +6,7 @@ pub enum Level {
   ERROR,
 }
 
-pub fn log(message: &str, level: Level) {
+pub fn print_level(level: Level) {
   match level {
     Level::INFO => {
       print!("{}", "[INFO]\t".green());
@@ -18,6 +18,4 @@ pub fn log(message: &str, level: Level) {
       print!("{}", "[ERROR]\t".red());
     }
   }
-
-  println!("{}", message);
 }

@@ -1,19 +1,19 @@
+use crate::log::{self, print_level};
+
 use super::common;
+use colored::Colorize;
 use glsl::syntax::TypeSpecifierNonArray;
 
 pub fn generate_ts_types_file(
   vertex_file_path: &std::path::PathBuf,
   fragment_file_path: &std::path::PathBuf,
   output_folder: &std::path::PathBuf,
-) {
+) -> bool {
   let vertex_file = std::fs::read_to_string(&vertex_file_path).unwrap();
   let fragment_file = std::fs::read_to_string(&fragment_file_path).unwrap();
 
   let vertex_data = common::extract_shader_data(&vertex_file, &vertex_file_path);
   let fragment_data = common::extract_shader_data(&fragment_file, &fragment_file_path);
-
-  println!("Vertex data: {:?}", vertex_data);
-  println!("Fragment data: {:?}", fragment_data);
 
   // We need to combine the uniforms from both the vertex and fragment shaders.
   // We need to check that if a uniform is defined in both shaders, the type is the same.
@@ -24,14 +24,13 @@ pub fn generate_ts_types_file(
       if vertex_uniform.name == fragment_uniform.name
         && vertex_uniform.uniform_type != fragment_uniform.uniform_type
       {
+        print_level(log::Level::ERROR);
         println!(
-          "Uniform `{}` is defined with different types in the vertex and fragment shaders",
-          vertex_uniform.name
+          "Uniform {} is defined with different types in the vertex and fragment shaders",
+          vertex_uniform.name.bright_red().bold()
         );
-        println!("Vertex shader: {:?}", vertex_uniform.uniform_type);
-        println!("Fragment shader: {:?}", fragment_uniform.uniform_type);
 
-        return;
+        return false;
       }
     }
   }
@@ -64,11 +63,31 @@ pub fn generate_ts_types_file(
     }
 
     if !found {
+      print_level(log::Level::ERROR);
       println!(
-        "Varying `{}` is defined in the vertex shader but not in the fragment shader",
-        vertex_varying.name
+        "Varying {} is defined in the vertex shader but not in the fragment shader",
+        vertex_varying.name.bright_red().bold()
       );
-      return;
+      return false;
+    }
+  }
+
+  for fragment_varying in &fragment_data.varyings {
+    let mut found = false;
+    for vertex_varying in &vertex_data.varyings {
+      if fragment_varying.name == vertex_varying.name {
+        found = true;
+        break;
+      }
+    }
+
+    if !found {
+      print_level(log::Level::ERROR);
+      println!(
+        "Varying {} is defined in the fragment shader but not in the vertex shader",
+        fragment_varying.name.as_str().bright_red().bold()
+      );
+      return false;
     }
   }
 
@@ -78,14 +97,13 @@ pub fn generate_ts_types_file(
       if vertex_varying.name == fragment_varying.name
         && vertex_varying.varying_type != fragment_varying.varying_type
       {
+        print_level(log::Level::ERROR);
         println!(
-          "Varying `{}` is defined with different types in the vertex and fragment shaders",
-          vertex_varying.name
+          "Varying {} is defined with different types in the vertex and fragment shaders",
+          vertex_varying.name.as_str().bright_red().bold()
         );
-        println!("Vertex shader: {:?}", vertex_varying.varying_type);
-        println!("Fragment shader: {:?}", fragment_varying.varying_type);
 
-        return;
+        return false;
       }
     }
   }
@@ -132,6 +150,8 @@ pub fn generate_ts_types_file(
 
   let output_file_path = output_folder.join(format!("{}.ts", output_file_name));
   std::fs::write(output_file_path, output_file).unwrap();
+
+  return true;
 }
 
 fn convert_glsl_to_ts_label(uniform: &TypeSpecifierNonArray) -> String {
