@@ -1,83 +1,52 @@
-use crate::uniforms::{Uniform, UniformType};
+use crate::uniforms::Uniform;
+use glsl::parser::Parse as _;
+use glsl::syntax::{ShaderStage, SingleDeclaration, StorageQualifier, TypeQualifierSpec};
+use glsl::visitor::{Host, Visit, Visitor};
 
 pub fn capitalize_first_letter(s: &str) -> String {
-    s.chars().next().unwrap().to_uppercase().collect::<String>() + &s[1..]
+  s.chars().next().unwrap().to_uppercase().collect::<String>() + &s[1..]
+}
+
+struct UniformVisitor {
+  uniforms: Vec<Uniform>,
+}
+
+impl Visitor for UniformVisitor {
+  fn visit_single_declaration(&mut self, declaration: &SingleDeclaration) -> Visit {
+    if let Some(name) = &declaration.name {
+      if let Some(type_qualifier) = &declaration.ty.qualifier {
+        type_qualifier
+          .qualifiers
+          .clone()
+          .into_iter()
+          .for_each(|qualifier| {
+            if let TypeQualifierSpec::Storage(StorageQualifier::Uniform) = qualifier {
+              self.uniforms.push(Uniform {
+                name: name.as_str().to_string(),
+                uniform_type: declaration.ty.ty.ty.clone(),
+              });
+            }
+          });
+      }
+    }
+
+    Visit::Parent
+  }
 }
 
 pub fn extract_uniforms(file: &String) -> Vec<Uniform> {
-    let mut uniforms = Vec::new();
+  let stage = ShaderStage::parse(file);
 
-    let file = remove_comments(file);
-    let file = file.replace("\n", "");
+  let mut uniform_visitor = UniformVisitor {
+    uniforms: Vec::new(),
+  };
 
-    let words = file.split_whitespace();
-
-    // Check each word for words with the ";" character and convert those words into multiple words
-    let words: Vec<&str> = words
-        .map(|word| word.split(";").collect::<Vec<&str>>())
-        .flatten()
-        .collect();
-
-    let mut i = 0;
-    while i < words.len() {
-        if words[i] == "uniform" {
-            let uniform_type = words[i + 1];
-            let uniform_name = words[i + 2].split(";").collect::<Vec<&str>>()[0];
-
-            let uniform_type = match UniformType::from_str(uniform_type) {
-                Ok(uniform_type) => uniform_type,
-                Err(_) => {
-                    println!(
-                        "Unknown uniform type: {}. Skipping types for uniform: {}",
-                        uniform_type, uniform_name
-                    );
-
-                    i += 1;
-                    continue;
-                }
-            };
-
-            let uniform = Uniform {
-                name: uniform_name.to_string(),
-                uniform_type: uniform_type,
-            };
-
-            uniforms.push(uniform);
-        }
-        i += 1;
+  match stage {
+    Ok(stage) => stage.visit(&mut uniform_visitor),
+    Err(e) => {
+      println!("Error parsing the shader: {}", e);
     }
+  }
 
-    return uniforms;
-}
-
-fn remove_comments(file: &String) -> String {
-    let mut result = String::new();
-    let mut chars = file.chars().peekable();
-
-    while let Some(c) = chars.next() {
-        if c == '/' {
-            if let Some(&'/') = chars.peek() {
-                while let Some(c) = chars.next() {
-                    if c == '\n' {
-                        break;
-                    }
-                }
-            } else if let Some(&'*') = chars.peek() {
-                while let Some(c) = chars.next() {
-                    if c == '*' {
-                        if let Some(&'/') = chars.peek() {
-                            chars.next();
-                            break;
-                        }
-                    }
-                }
-            } else {
-                result.push(c);
-            }
-        } else {
-            result.push(c);
-        }
-    }
-
-    return result;
+  return uniform_visitor.uniforms;
 }
