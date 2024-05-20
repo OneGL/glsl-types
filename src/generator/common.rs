@@ -4,29 +4,12 @@ use glsl::syntax::{
 };
 use glsl::visitor::{Host, Visit, Visitor};
 
+use crate::utils::get_shader_type::{get_shader_type, ShaderType};
+
 pub fn capitalize_first_letter(s: &str) -> String {
   s.chars().next().unwrap().to_uppercase().collect::<String>() + &s[1..]
 }
 
-const FRAGMENT_SHADER_EXTENSIONS: [&str; 2] = ["fs", "frag"];
-const VERTEX_SHADER_EXTENSIONS: [&str; 2] = ["vs", "vert"];
-
-#[derive(Clone, Debug)]
-enum ShaderType {
-  Fragment,
-  Vertex,
-}
-
-fn get_shader_type(file_path: &std::path::PathBuf) -> ShaderType {
-  let extension = file_path.extension().unwrap().to_str().unwrap();
-  if FRAGMENT_SHADER_EXTENSIONS.contains(&extension) {
-    return ShaderType::Fragment;
-  } else if VERTEX_SHADER_EXTENSIONS.contains(&extension) {
-    return ShaderType::Vertex;
-  }
-
-  panic!("Unknown shader type");
-}
 #[derive(Clone, Debug)]
 pub struct Uniform {
   pub name: String,
@@ -104,13 +87,13 @@ impl Visitor for ShaderData {
 }
 
 pub fn extract_shader_data(file: &String, file_path: &std::path::PathBuf) -> ShaderData {
-  let stage = ShaderStage::parse(file);
+  let stage: Result<glsl::syntax::TranslationUnit, glsl::parser::ParseError> = ShaderStage::parse(file);
 
   let mut shader_data = ShaderData {
     uniforms: Vec::new(),
     varyings: Vec::new(),
     attributes: Vec::new(),
-    shader_type: get_shader_type(file_path),
+    shader_type: get_shader_type(file_path).unwrap(),
   };
 
   match stage {

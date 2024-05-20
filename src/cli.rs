@@ -1,13 +1,19 @@
 extern crate chrono;
+use std::path::Path;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use crate::generator::type_script;
 use crate::import_resolver;
 use crate::log;
+use crate::utils::get_shader_type::get_shader_type;
+use crate::utils::get_shader_type::ShaderType;
+use crate::utils::get_shader_type::FRAGMENT_SHADER_EXTENSIONS;
+use crate::utils::get_shader_type::VERTEX_SHADER_EXTENSIONS;
 use crate::{debounce, log::print_level};
 use clap::Parser;
 use colored::Colorize;
-use notify::{Event, RecursiveMode, Result, Watcher};
+use notify::{Event, RecursiveMode, Watcher};
 
 const DEFAULT_INPUT_FOLDER: &str = "shaders";
 const DEFAULT_OUTPUT_FOLDER: &str = "output";
@@ -64,76 +70,39 @@ pub fn start(args: Vec<String>) -> () {
     }
 
     let file_path = event.paths.first().unwrap();
-    let file_extension = file_path.extension().unwrap();
 
-    // Ignore files that do not end with .vert or .frag extension
-    if file_extension != "vert" && file_extension != "frag" {
-      return;
-    }
-
+    // Update the file path to be relative to the input folder
     let input_folder_canon = std::fs::canonicalize(&input_folder).unwrap();
     let input_folder_parent = input_folder_canon.parent().unwrap();
-    let file_path = file_path.strip_prefix(&input_folder_parent).unwrap();
+    let file_path_relative_to_input = file_path.strip_prefix(&input_folder_parent).unwrap();
 
-    // The user should create both the vertex and fragment shader files
-    // if the user only creates one of them, we will show an error message
-    // and ignore the file.
-    let file_folder = file_path.parent().unwrap();
-    let file_stem: String = file_path.file_stem().unwrap().to_str().unwrap().to_string();
-    let vertex_shader_path = file_folder.join(file_stem.clone() + ".vert");
-    let fragment_shader_path = file_folder.join(file_stem.clone() + ".frag");
-
-    if !vertex_shader_path.exists() || !fragment_shader_path.exists() {
-      print_level(log::Level::ERROR);
-      println!(
-        "Missing shader files: {}",
-        file_path.to_str().unwrap().cyan()
-      );
-      println!("");
-
-      if !vertex_shader_path.exists() {
-        println!(
-          "Please create a vertex shader file: {}",
-          vertex_shader_path.to_str().unwrap().blue().underline()
-        );
-      } else {
-        println!(
-          "Please create a fragment shader file: {}",
-          fragment_shader_path.to_str().unwrap().blue().underline()
-        );
-      }
-
-      println!("");
-      println!(
-        "When creating a shader, you need to create both the vertex and fragment shader files."
-      );
-      println!("For example, if you create a shader file called {}, you also need to create a file called {}.", "example.vert".cyan(), "example.frag".cyan());
-      println!("");
-      println!("Example:");
-      println!("");
-      println!("├── shaders");
-      println!("│   ├── {}.vert", "example".cyan());
-      println!("│   └── {}.frag", "example".cyan());
-      println!("│");
-      println!("├── output");
-      println!("    └── {}.ts", "example".cyan());
-      println!("");
-      return;
-    }
+    let (vertex_path, fragment_path) = match ensure_both_shader_files_exist(&file_path) {
+      Ok((vertex_path, fragment_path)) => (vertex_path, fragment_path),
+      Err(err) => match err {
+        LoadShaderError::InvalidInputFile => {
+          // Ignore invalid input files
+          return;
+        }
+        LoadShaderError::MissingShaderPair(shader_type) => {
+          log_missing_shader_error(file_path_relative_to_input, shader_type);
+          return;
+        }
+      },
+    };
 
     // Measure the time it takes to generate the types
     let start = std::time::Instant::now();
-    let success = type_script::generate_ts_types_file(
-      &vertex_shader_path,
-      &fragment_shader_path,
-      &output_folder,
-    );
+    let success = type_script::generate_ts_types_file(&vertex_path, &fragment_path, &output_folder);
 
     if success {
       print_level(log::Level::INFO);
       print!(
         "Types generated for the shader file: {}",
-        file_path.to_str().unwrap().blue().underline()
+        file_path_relative_to_input
+          .to_str()
+          .unwrap()
+          .blue()
+          .underline()
       );
 
       println!(
@@ -146,7 +115,7 @@ pub fn start(args: Vec<String>) -> () {
     }
   });
 
-  let mut watcher = notify::recommended_watcher(move |res: Result<Event>| match res {
+  let mut watcher = notify::recommended_watcher(move |res: notify::Result<Event>| match res {
     Ok(event) => {
       debounced.call(event);
     }
@@ -163,4 +132,114 @@ pub fn start(args: Vec<String>) -> () {
   loop {
     std::thread::sleep(std::time::Duration::from_millis(100));
   }
+}
+
+enum LoadShaderError {
+  MissingShaderPair(ShaderType),
+  InvalidInputFile,
+}
+
+fn ensure_both_shader_files_exist(
+  file_path: &PathBuf,
+) -> Result<(PathBuf, PathBuf), LoadShaderError> {
+  let file_without_extension = file_path.with_extension("");
+
+  let shader_type = match get_shader_type(file_path) {
+    Some(shader_type) => shader_type,
+    None => return Err(LoadShaderError::InvalidInputFile),
+  };
+
+  match shader_type {
+    ShaderType::Fragment => {
+      for extension in VERTEX_SHADER_EXTENSIONS.iter() {
+        let vertex_shader_path = file_without_extension.with_extension(extension);
+
+        if vertex_shader_path.exists() {
+          return Ok((vertex_shader_path, file_path.clone()));
+        }
+      }
+
+      return Err(LoadShaderError::MissingShaderPair(ShaderType::Vertex));
+    }
+    ShaderType::Vertex => {
+      for extension in FRAGMENT_SHADER_EXTENSIONS.iter() {
+        let fragment_shader_path = file_without_extension.with_extension(extension);
+
+        if fragment_shader_path.exists() {
+          return Ok((file_path.clone(), fragment_shader_path));
+        }
+      }
+
+      return Err(LoadShaderError::MissingShaderPair(ShaderType::Fragment));
+    }
+  }
+}
+
+fn log_missing_shader_error(file_path: &Path, shader_type: ShaderType) {
+  let file_folder = file_path.parent().unwrap();
+  let file_stem: String = file_path.file_stem().unwrap().to_str().unwrap().to_string();
+
+  println!("");
+  print_level(log::Level::ERROR);
+
+  match shader_type {
+    ShaderType::Vertex => {
+      println!(
+        "Missing vertex shader for: {}",
+        file_path.to_str().unwrap().blue().underline()
+      );
+      println!("");
+      println!(
+        "Please create a vertex shader file: {}{}",
+        file_folder
+          .join(file_stem.clone())
+          .to_str()
+          .unwrap()
+          .blue()
+          .underline(),
+        (".".to_string() + VERTEX_SHADER_EXTENSIONS[0])
+          .blue()
+          .underline()
+          .bold()
+      );
+    }
+    ShaderType::Fragment => {
+      println!(
+        "Missing fragment shader for: {}",
+        file_path.to_str().unwrap().blue().underline()
+      );
+      println!("");
+      println!(
+        "Please create a fragment shader file: {}{}",
+        file_folder
+          .join(file_stem.clone())
+          .to_str()
+          .unwrap()
+          .blue()
+          .underline(),
+        (".".to_string() + FRAGMENT_SHADER_EXTENSIONS[0])
+          .blue()
+          .underline()
+          .bold()
+      );
+    }
+  }
+
+  println!("");
+  println!("When creating a shader, you need to create both the vertex and fragment shader files.");
+  println!(
+    "For example, if you create a shader file called {}, you also need to create a file called {}.",
+    "example.vert".cyan(),
+    "example.frag".cyan()
+  );
+  println!("");
+  println!("Example:");
+  println!("");
+  println!("├── shaders");
+  println!("│   ├── {}.vert", "example".cyan());
+  println!("│   └── {}.frag", "example".cyan());
+  println!("│");
+  println!("├── output");
+  println!("    └── {}.ts", "example".cyan());
+  println!("");
 }
