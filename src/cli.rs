@@ -76,7 +76,7 @@ pub fn start(args: Vec<String>) -> () {
     let input_folder_parent = input_folder_canon.parent().unwrap();
     let file_path_relative_to_input = file_path.strip_prefix(&input_folder_parent).unwrap();
 
-    let (vertex_path, fragment_path) = match ensure_both_shader_files_exist(&file_path) {
+    let (vertex_path, fragment_path) = match ensure_both_shader_files_exist(file_path.clone()) {
       Ok((vertex_path, fragment_path)) => (vertex_path, fragment_path),
       Err(err) => match err {
         LoadShaderError::InvalidInputFile => {
@@ -140,11 +140,11 @@ enum LoadShaderError {
 }
 
 fn ensure_both_shader_files_exist(
-  file_path: &PathBuf,
+  file_path: PathBuf,
 ) -> Result<(PathBuf, PathBuf), LoadShaderError> {
   let file_without_extension = file_path.with_extension("");
 
-  let shader_type = match get_shader_type(file_path) {
+  let shader_type = match get_shader_type(&file_path) {
     Some(shader_type) => shader_type,
     None => return Err(LoadShaderError::InvalidInputFile),
   };
@@ -155,7 +155,7 @@ fn ensure_both_shader_files_exist(
         let vertex_shader_path = file_without_extension.with_extension(extension);
 
         if vertex_shader_path.exists() {
-          return Ok((vertex_shader_path, file_path.clone()));
+          return Ok((vertex_shader_path, file_path));
         }
       }
 
@@ -166,7 +166,7 @@ fn ensure_both_shader_files_exist(
         let fragment_shader_path = file_without_extension.with_extension(extension);
 
         if fragment_shader_path.exists() {
-          return Ok((file_path.clone(), fragment_shader_path));
+          return Ok((file_path, fragment_shader_path));
         }
       }
 
@@ -176,8 +176,7 @@ fn ensure_both_shader_files_exist(
 }
 
 fn log_missing_shader_error(file_path: &Path, shader_type: ShaderType) {
-  let file_folder = file_path.parent().unwrap();
-  let file_stem: String = file_path.file_stem().unwrap().to_str().unwrap().to_string();
+  let file_without_extension = file_path.with_extension("");
 
   println!("");
   print_level(log::Level::ERROR);
@@ -191,12 +190,7 @@ fn log_missing_shader_error(file_path: &Path, shader_type: ShaderType) {
       println!("");
       println!(
         "Please create a vertex shader file: {}{}",
-        file_folder
-          .join(file_stem.clone())
-          .to_str()
-          .unwrap()
-          .blue()
-          .underline(),
+        file_without_extension.to_str().unwrap().blue().underline(),
         (".".to_string() + VERTEX_SHADER_EXTENSIONS[0])
           .blue()
           .underline()
@@ -211,12 +205,7 @@ fn log_missing_shader_error(file_path: &Path, shader_type: ShaderType) {
       println!("");
       println!(
         "Please create a fragment shader file: {}{}",
-        file_folder
-          .join(file_stem.clone())
-          .to_str()
-          .unwrap()
-          .blue()
-          .underline(),
+        file_without_extension.to_str().unwrap().blue().underline(),
         (".".to_string() + FRAGMENT_SHADER_EXTENSIONS[0])
           .blue()
           .underline()
