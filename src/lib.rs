@@ -4,6 +4,7 @@ mod cli;
 mod debounce;
 mod generator;
 mod log;
+mod import_resolver;
 
 #[macro_use]
 extern crate napi_derive;

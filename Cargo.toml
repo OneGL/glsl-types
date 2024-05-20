@@ -12,7 +12,9 @@ napi = { version = "2.12.2", default-features = false, features = ["napi4"] }
 napi-derive = "2.12.2"
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
-glsl = "7.0.0"
+# glsl = "7.0.0"
+# Import glsl from file system
+glsl = { path = "../glsl/glsl" }
 notify = "6.1.1"
 chrono = "0.4"
 tokio = { version = "1", features = ["full"] }

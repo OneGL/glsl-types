@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug)]
 pub struct Graph {
-  pub adjacency_list: HashMap<String, Vec<String>>,
+  pub adjacency_list: HashMap<PathBuf, Vec<PathBuf>>,
 }
 
 impl Graph {
@@ -12,7 +12,7 @@ impl Graph {
     }
   }
 
-  pub fn add_edge(&mut self, node: String, edge: String) {
+  pub fn add_edge(&mut self, node: PathBuf, edge: PathBuf) {
     self
       .adjacency_list
       .entry(node)
@@ -20,15 +20,15 @@ impl Graph {
       .push(edge);
   }
 
-  pub fn get_neighbors(&self, node: &str) -> Option<&Vec<String>> {
+  pub fn get_neighbors(&self, node: &PathBuf) -> Option<&Vec<PathBuf>> {
     self.adjacency_list.get(node)
   }
 
-  fn dfs(
-    &self,
-    node: &str,
-    visited: &mut HashMap<String, bool>,
-    recursive_stack: &mut HashMap<String, bool>,
+  fn dfs<'a>(
+    &'a self,
+    node: &'a PathBuf,
+    visited: &mut HashMap<&'a PathBuf, bool>,
+    recursive_stack: &mut HashMap<&'a PathBuf, bool>,
   ) -> bool {
     if recursive_stack.contains_key(node) {
       return true;
@@ -38,8 +38,8 @@ impl Graph {
       return false;
     }
 
-    visited.insert(node.to_string(), true);
-    recursive_stack.insert(node.to_string(), true);
+    visited.insert(node, true);
+    recursive_stack.insert(node, true);
 
     if let Some(neighbors) = self.get_neighbors(node) {
       for neighbor in neighbors {
@@ -59,7 +59,7 @@ impl Graph {
     let mut recursive_stack = HashMap::new();
 
     for node in self.adjacency_list.keys() {
-      if self.dfs(node, &mut visited, &mut recursive_stack) {
+      if self.dfs(&node, &mut visited, &mut recursive_stack) {
         return true;
       }
     }

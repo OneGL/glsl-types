@@ -2,6 +2,7 @@ extern crate chrono;
 use std::time::Duration;
 
 use crate::generator::type_script;
+use crate::import_resolver;
 use crate::log;
 use crate::{debounce, log::print_level};
 use clap::Parser;
@@ -147,6 +148,9 @@ pub async fn start(args: Vec<String>) -> () {
         " {}",
         format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
       );
+
+      let combined = import_resolver::import_resolver::resolve_imports(&file_path.to_path_buf());
+      println!("{}", combined);
     }
   });
 
