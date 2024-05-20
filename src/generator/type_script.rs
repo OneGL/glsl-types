@@ -9,8 +9,29 @@ pub fn generate_ts_types_file(
   fragment_file_path: &std::path::PathBuf,
   output_folder: &std::path::PathBuf,
 ) -> bool {
-  let vertex_file = std::fs::read_to_string(&vertex_file_path).unwrap();
-  let fragment_file = std::fs::read_to_string(&fragment_file_path).unwrap();
+  let vertex_file = match std::fs::read_to_string(&vertex_file_path) {
+    Ok(file) => file,
+    Err(_) => {
+      print_level(log::Level::ERROR);
+      println!(
+        "Failed to read the vertex shader file: {}",
+        vertex_file_path.to_str().unwrap().bright_red().bold()
+      );
+      return false;
+    }
+  };
+
+  let fragment_file = match std::fs::read_to_string(&fragment_file_path) {
+    Ok(file) => file,
+    Err(_) => {
+      print_level(log::Level::ERROR);
+      println!(
+        "Failed to read the fragment shader file: {}",
+        fragment_file_path.to_str().unwrap().bright_red().bold()
+      );
+      return false;
+    }
+  };
 
   let vertex_data = common::extract_shader_data(&vertex_file, &vertex_file_path);
   let fragment_data = common::extract_shader_data(&fragment_file, &fragment_file_path);
