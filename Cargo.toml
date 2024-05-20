@@ -17,7 +17,6 @@ colored = "2.1.0"
 glsl = { path = "../glsl/glsl" }
 notify = "6.1.1"
 chrono = "0.4"
-tokio = { version = "1", features = ["full"] }
 
 [build-dependencies]
 napi-build = "2.0.1"

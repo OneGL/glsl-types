@@ -23,16 +23,9 @@ struct Args {
   /// Output folder for the generated types
   #[arg(short, long, default_value = DEFAULT_OUTPUT_FOLDER)]
   output_folder: std::path::PathBuf,
-
-  /// Output language
-  /// Supported languages: ts, rs
-  /// Default: ts
-  #[arg(short, long, default_value = "ts")]
-  language: String,
 }
 
-#[tokio::main]
-pub async fn start(args: Vec<String>) -> () {
+pub fn start(args: Vec<String>) -> () {
   let args = Args::try_parse_from(args).expect("Failed to parse arguments");
 
   if !args.input_float.exists() {
@@ -53,7 +46,6 @@ pub async fn start(args: Vec<String>) -> () {
 
   let input_folder = args.input_float.clone();
   let output_folder = args.output_folder.clone();
-  let language = args.language.clone();
 
   print!("\x1B[2J\x1B[1;1H");
   println!("{}", "GLSL Types Generator".bold());
