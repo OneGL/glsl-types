@@ -1,4 +1,4 @@
-use crate::log::{self, print_level};
+use crate::log::{print_level, Level};
 
 use super::common;
 use colored::Colorize;
@@ -12,7 +12,7 @@ pub fn generate_ts_types_file(
   let vertex_file = match std::fs::read_to_string(&vertex_file_path) {
     Ok(file) => file,
     Err(_) => {
-      print_level(log::Level::ERROR);
+      print_level(Level::ERROR);
       println!(
         "Failed to read the vertex shader file: {}",
         vertex_file_path.to_str().unwrap().bright_red().bold()
@@ -24,7 +24,7 @@ pub fn generate_ts_types_file(
   let fragment_file = match std::fs::read_to_string(&fragment_file_path) {
     Ok(file) => file,
     Err(_) => {
-      print_level(log::Level::ERROR);
+      print_level(Level::ERROR);
       println!(
         "Failed to read the fragment shader file: {}",
         fragment_file_path.to_str().unwrap().bright_red().bold()
@@ -45,7 +45,7 @@ pub fn generate_ts_types_file(
       if vertex_uniform.name == fragment_uniform.name
         && vertex_uniform.uniform_type != fragment_uniform.uniform_type
       {
-        print_level(log::Level::ERROR);
+        print_level(Level::ERROR);
         println!(
           "Uniform {} is defined with different types in the vertex and fragment shaders",
           vertex_uniform.name.bright_red().bold()
@@ -84,7 +84,7 @@ pub fn generate_ts_types_file(
     }
 
     if !found {
-      print_level(log::Level::ERROR);
+      print_level(Level::ERROR);
       println!(
         "Varying {} is defined in the vertex shader but not in the fragment shader",
         vertex_varying.name.bright_red().bold()
@@ -103,7 +103,7 @@ pub fn generate_ts_types_file(
     }
 
     if !found {
-      print_level(log::Level::ERROR);
+      print_level(Level::ERROR);
       println!(
         "Varying {} is defined in the fragment shader but not in the vertex shader",
         fragment_varying.name.as_str().bright_red().bold()
@@ -118,7 +118,7 @@ pub fn generate_ts_types_file(
       if vertex_varying.name == fragment_varying.name
         && vertex_varying.varying_type != fragment_varying.varying_type
       {
-        print_level(log::Level::ERROR);
+        print_level(Level::ERROR);
         println!(
           "Varying {} is defined with different types in the vertex and fragment shaders",
           vertex_varying.name.as_str().bright_red().bold()
@@ -131,7 +131,7 @@ pub fn generate_ts_types_file(
 
   // Show a warning if the vertex shader has more than 16 attributes (This is webgl2)
   if vertex_data.attributes.len() > 16 {
-    print_level(log::Level::WARN);
+    print_level(Level::WARN);
     println!(
       "The vertex shader has more than 16 attributes. This can cause issues in some devices."
     );

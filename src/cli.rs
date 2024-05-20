@@ -10,7 +10,7 @@ use crate::utils::get_shader_type::get_shader_type;
 use crate::utils::get_shader_type::ShaderType;
 use crate::utils::get_shader_type::FRAGMENT_SHADER_EXTENSIONS;
 use crate::utils::get_shader_type::VERTEX_SHADER_EXTENSIONS;
-use crate::{debounce, log::print_level};
+use crate::{debounce, log::print_level, log::Level};
 use clap::Parser;
 use colored::Colorize;
 use notify::{Event, RecursiveMode, Watcher};
@@ -179,7 +179,7 @@ fn log_missing_shader_error(file_path: &Path, shader_type: ShaderType) {
   let file_without_extension = file_path.with_extension("");
 
   println!("");
-  print_level(log::Level::ERROR);
+  print_level(Level::ERROR);
 
   match shader_type {
     ShaderType::Vertex => {
