@@ -1,15 +1,15 @@
-use glsl::parser::Parse as _;
-use glsl::syntax::ShaderStage;
+use glsl::syntax::TranslationUnit;
 use glsl::visitor::{Host, Visit, Visitor};
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-pub fn get_file_imports(file_contents: &str, file_path: &PathBuf) -> HashMap<String, PathBuf> {
+pub fn get_file_imports(
+  ast: &mut TranslationUnit,
+  file_path: &PathBuf,
+) -> HashMap<String, PathBuf> {
   let mut visitor = FileImports::new(file_path);
-  ShaderStage::parse(file_contents)
-    .unwrap()
-    .visit(&mut visitor);
+  ast.visit(&mut visitor);
   return visitor.imports;
 }
 

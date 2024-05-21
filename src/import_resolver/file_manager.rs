@@ -1,11 +1,14 @@
+use glsl::parser::Parse as _;
+use glsl::syntax::{ShaderStage, TranslationUnit};
 use std::{collections::HashMap, path::PathBuf};
 
-use super::imports::get_file_imports;
+use super::{import_resolver::ImportError, imports::get_file_imports};
 
 #[derive(Debug, Clone)]
 pub struct File {
   pub contents: String,
   pub imports: HashMap<String, PathBuf>,
+  pub ast: TranslationUnit,
 }
 
 pub struct FileManager {
@@ -19,24 +22,39 @@ impl FileManager {
     }
   }
 
-  pub fn get_file(&mut self, file_path: &PathBuf) -> File {
+  pub fn get_file(&mut self, file_path: &PathBuf) -> Result<File, ImportError> {
     if let Some(file) = self.files.get(file_path) {
-      return file.clone();
+      return Ok(file.clone());
     }
 
-    let file_contents = std::fs::read_to_string(file_path).unwrap();
-    let file_imports = get_file_imports(&file_contents, file_path);
+    let contents = std::fs::read_to_string(file_path).unwrap();
+
+    let mut ast = match ShaderStage::parse(&contents) {
+      Ok(ast) => ast,
+      Err(_) => {
+        return Err(ImportError::CouldNotParseFile(
+          file_path.to_str().unwrap().to_string(),
+        ))
+      }
+    };
+
+    let imports = get_file_imports(&mut ast, file_path);
 
     let file = File {
-      contents: file_contents,
-      imports: file_imports,
+      contents,
+      imports,
+      ast,
     };
 
     self.files.insert(file_path.clone(), file.clone());
-    return file;
+    return Ok(file);
   }
 
-  pub fn get_file_imports(&mut self, file_path: &PathBuf) -> HashMap<String, PathBuf> {
-    self.get_file(file_path).imports.clone()
+  pub fn get_file_imports(
+    &mut self,
+    file_path: &PathBuf,
+  ) -> Result<HashMap<String, PathBuf>, ImportError> {
+    let file = self.get_file(file_path)?;
+    return Ok(file.imports);
   }
 }
