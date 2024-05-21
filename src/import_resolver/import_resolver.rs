@@ -16,9 +16,7 @@ pub fn resolve_imports(file: &PathBuf) -> String {
 
   resolver.build_import_graph(file);
 
-  println!("{:?}", resolver.graph);
-
-  return resolver.combine_files(file, &mut HashSet::new());
+  return move_glsl_version_to_top(resolver.combine_files(file, &mut HashSet::new(), true));
 }
 
 struct ImportResolver {
@@ -52,7 +50,12 @@ impl ImportResolver {
     return &self.graph;
   }
 
-  fn combine_files(&mut self, node: &PathBuf, visited: &mut HashSet<PathBuf>) -> String {
+  fn combine_files(
+    &mut self,
+    node: &PathBuf,
+    visited: &mut HashSet<PathBuf>,
+    is_root: bool,
+  ) -> String {
     let mut output = String::new();
 
     if visited.contains(node) {
@@ -68,27 +71,59 @@ impl ImportResolver {
       .unwrap_or_else(Vec::new);
 
     for neighbor in neighbors {
-      output += &self.combine_files(&neighbor, visited);
+      output += &self.combine_files(&neighbor, visited, false);
     }
 
-    output += &self.get_file_content(node);
+    output += &self.get_file_content(node, is_root);
 
     return output;
   }
 
-  fn get_file_content(&mut self, file_path: &PathBuf) -> String {
+  fn get_file_content(&mut self, file_path: &PathBuf, is_root: bool) -> String {
     let file = self.file_manager.get_file(file_path);
     let mut ast = ShaderStage::parse(&file.contents).unwrap();
 
     let fn_names = self.function_names.clone();
-    let fn_names = rename_functions_to_avoid_collisions(&mut ast, fn_names, file_path);
+
+    let (fn_names, fn_definitions) =
+      rename_functions_to_avoid_collisions(&mut ast, fn_names, file_path);
+
     let fn_names =
       rename_imported_function_calls(&mut ast, fn_names, file.imports, file_path.clone());
+
     self.function_names = fn_names;
 
     // Transpile the shader AST back to GLSL
     let mut output = String::new();
-    transpiler::glsl::show_translation_unit(&mut output, &ast);
+
+    if is_root {
+      transpiler::glsl::show_translation_unit(&mut output, &ast);
+      return output;
+    }
+
+    for fn_definition in fn_definitions {
+      transpiler::glsl::show_function_definition(&mut output, &fn_definition);
+    }
+
     return output;
   }
+}
+
+fn move_glsl_version_to_top(content: String) -> String {
+  let mut lines = content.lines().collect::<Vec<&str>>();
+  let mut version_line = None;
+
+  for (i, line) in lines.iter().enumerate() {
+    if line.starts_with("#version") {
+      version_line = Some(i);
+      break;
+    }
+  }
+
+  if let Some(version_line) = version_line {
+    let version_line = lines.remove(version_line);
+    lines.insert(0, version_line);
+  }
+
+  return lines.join("\n");
 }
