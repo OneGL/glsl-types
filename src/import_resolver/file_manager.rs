@@ -29,20 +29,12 @@ impl FileManager {
 
     let contents = match std::fs::read_to_string(file_path) {
       Ok(contents) => contents,
-      Err(_) => {
-        return Err(ImportError::FileNotFound(
-          file_path.to_str().unwrap().to_string(),
-        ))
-      }
+      Err(_) => return Err(ImportError::FileNotFound(file_path.to_path_buf())),
     };
 
     let mut ast = match ShaderStage::parse(&contents) {
       Ok(ast) => ast,
-      Err(_) => {
-        return Err(ImportError::CouldNotParseFile(
-          file_path.to_str().unwrap().to_string(),
-        ))
-      }
+      Err(_) => return Err(ImportError::CouldNotParseFile(file_path.to_path_buf())),
     };
 
     let imports = get_file_imports(&mut ast, file_path)?;

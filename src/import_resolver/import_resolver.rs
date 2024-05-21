@@ -12,9 +12,14 @@ use super::graph::Graph;
 #[derive(Debug, Clone)]
 pub enum ImportError {
   CycleDetected,
-  CouldNotParseFile(String),
-  FileNotFound(String),
+  CouldNotParseFile(PathBuf),
+  FileNotFound(PathBuf),
   DuplicateImportIdentifier(String),
+  FileDoesNotExportFunction {
+    fn_name: String,
+    import_identifier: String,
+    import_path: PathBuf,
+  },
 }
 
 pub fn resolve_imports(file: &PathBuf) -> Result<String, ImportError> {
@@ -69,10 +74,10 @@ impl ImportResolver {
     if is_root {
       let mut file = self.file_manager.get_file(node)?;
 
-      let (fn_names, _) =
+      let visitor =
         rename_functions_to_avoid_collisions(&mut file.ast, self.fn_names.clone(), node);
 
-      self.fn_names = fn_names;
+      self.fn_names = visitor.fn_name_manager;
     }
 
     let mut output = String::new();
@@ -110,13 +115,13 @@ impl ImportResolver {
       output += "\n\n// Main file\n\n";
       output += &file.contents;
 
-      for (import_identifier, import_path) in file.imports {
+      for (import_identifier, import_path) in &file.imports {
         output = update_imported_fn_calls(
           &output,
           &import_identifier,
           &import_path,
           &mut self.fn_names,
-        );
+        )?;
       }
 
       return Ok(output);
@@ -124,8 +129,9 @@ impl ImportResolver {
 
     let fn_names = self.fn_names.clone();
 
-    let (fn_names, fn_definitions) =
-      rename_functions_to_avoid_collisions(&mut file.ast, fn_names, file_path);
+    let visitor = rename_functions_to_avoid_collisions(&mut file.ast, fn_names, file_path);
+
+    let fn_names = visitor.fn_name_manager;
 
     let fn_names =
       rename_imported_function_calls(&mut file.ast, fn_names, file.imports, file_path.clone());
@@ -142,7 +148,7 @@ impl ImportResolver {
     );
 
     // Transpile the shader AST back to GLSL
-    for fn_definition in fn_definitions {
+    for fn_definition in visitor.fn_definitions {
       transpiler::glsl::show_function_definition(&mut output, &fn_definition);
     }
 
@@ -174,11 +180,11 @@ fn update_imported_fn_calls(
   import_identifier: &str,
   import_path: &PathBuf,
   name_manager: &mut FunctionNameManager,
-) -> String {
+) -> Result<String, ImportError> {
   // We need to find the following pattern: <import_identifier>.<prev_fn_name>
   let mut output = String::new();
-  let import_identifier_with_dot = format!("{}.", import_identifier);
   let mut iter = WhitespaceSkippingIterator::new(source);
+  let import_identifier_with_dot = format!("{}.", import_identifier);
 
   while let Some((c, i, is_whitespace)) = iter.next() {
     output.push(c);
@@ -214,6 +220,19 @@ fn update_imported_fn_calls(
         fn_name.push(c);
       }
 
+      let file_function_names = name_manager
+        .file_fn_names
+        .entry(import_path.clone())
+        .or_insert_with(Vec::new);
+
+      if !file_function_names.contains(&fn_name) {
+        return Err(ImportError::FileDoesNotExportFunction {
+          fn_name,
+          import_identifier: import_identifier.to_string(),
+          import_path: import_path.clone(),
+        });
+      }
+
       let new_fn_name = name_manager.get_fn_name(&fn_name, import_path);
 
       output.pop();
@@ -222,7 +241,7 @@ fn update_imported_fn_calls(
     }
   }
 
-  return output;
+  return Ok(output);
 }
 
 struct WhitespaceSkippingIterator {
