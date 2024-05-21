@@ -93,7 +93,25 @@ impl ImportResolver {
   }
 
   fn get_file_content(&mut self, file_path: &PathBuf, is_root: bool) -> String {
+    let mut output = String::new();
     let file = self.file_manager.get_file(file_path);
+
+    if is_root {
+      output += "\n\n// Main file\n\n";
+      output += &file.contents;
+
+      for (import_identifier, import_path) in file.imports {
+        output = rename_fn_call_inplace(
+          &output,
+          &import_identifier,
+          &import_path,
+          &mut self.fn_names,
+        );
+      }
+
+      return output;
+    }
+
     let mut ast = ShaderStage::parse(&file.contents).unwrap();
 
     let fn_names = self.fn_names.clone();
@@ -106,9 +124,6 @@ impl ImportResolver {
 
     self.fn_names = fn_names;
 
-    // Transpile the shader AST back to GLSL
-    let mut output = String::new();
-
     output += &format!(
       "\n\n// File: {}\n\n",
       file_path
@@ -118,11 +133,7 @@ impl ImportResolver {
         .unwrap_or("unknown")
     );
 
-    if is_root {
-      transpiler::glsl::show_translation_unit(&mut output, &ast);
-      return output;
-    }
-
+    // Transpile the shader AST back to GLSL
     for fn_definition in fn_definitions {
       transpiler::glsl::show_function_definition(&mut output, &fn_definition);
     }
@@ -148,4 +159,130 @@ fn move_glsl_version_to_top(content: String) -> String {
   }
 
   return lines.join("\n");
+}
+
+fn rename_fn_call_inplace(
+  source: &str,
+  import_identifier: &str,
+  import_path: &PathBuf,
+  name_manager: &mut FunctionNameManager,
+) -> String {
+  // We need to find the following pattern: <import_identifier>.<prev_fn_name>
+  let mut output = String::new();
+  let import_identifier_with_dot = format!("{}.", import_identifier);
+  let mut iter = WhitespaceSkippingIterator::new(source);
+
+  while let Some((c, i, w)) = iter.next() {
+    output.push(c);
+
+    // We want to keep the whitespace
+    if w {
+      continue;
+    }
+
+    if i + import_identifier_with_dot.len() > source.len() {
+      break;
+    }
+
+    let slice = &source[i..i + import_identifier_with_dot.len()];
+
+    // We need to check if the slice is the import identifier
+    // move forward to check if the next character is a dot
+    // and then get the function name between the dot and the opening parenthesis
+    if slice == import_identifier_with_dot {
+      iter.i += import_identifier_with_dot.len() - 1;
+      let mut fn_name = String::new();
+
+      while let Some((c, _, w)) = iter.next() {
+        if w {
+          continue;
+        }
+
+        if c == '(' {
+          break;
+        }
+
+        fn_name.push(c);
+      }
+
+      let new_fn_name = name_manager.get_fn_name(&fn_name, import_path);
+
+      output.pop();
+      output += &new_fn_name;
+      output += "(";
+    }
+  }
+
+  return output;
+}
+
+struct WhitespaceSkippingIterator {
+  pub i: usize,
+  inside_string: bool,
+  inside_a_single_line_comment: bool,
+  inside_a_multi_line_comment: bool,
+  chars: Vec<char>,
+}
+
+impl WhitespaceSkippingIterator {
+  fn new(source: &str) -> Self {
+    Self {
+      i: 0,
+      inside_string: false,
+      inside_a_single_line_comment: false,
+      inside_a_multi_line_comment: false,
+      chars: source.chars().collect(),
+    }
+  }
+
+  fn next(&mut self) -> Option<(char, usize, bool)> {
+    while self.i < self.chars.len() {
+      let c = self.chars[self.i];
+      // Toggle inside_string flag only if we are not inside any comment
+      if c == '\"' && !self.inside_a_single_line_comment && !self.inside_a_multi_line_comment {
+        self.inside_string = !self.inside_string;
+      }
+
+      // Handle start of comments
+      if !self.inside_string {
+        // Handle comment start
+        if c == '/' && self.i + 1 < self.chars.len() {
+          let next_c = self.chars[self.i + 1];
+
+          if next_c == '/' {
+            self.inside_a_single_line_comment = true;
+          } else if next_c == '*' {
+            self.inside_a_multi_line_comment = true;
+          }
+        }
+
+        // Handle end of single-line comments
+        if c == '\n' {
+          self.inside_a_single_line_comment = false;
+        }
+
+        // Handle end of multi-line comments
+        if c == '*' && self.i + 1 < self.chars.len() {
+          let next_c = self.chars[self.i + 1];
+
+          if next_c == '/' {
+            self.inside_a_multi_line_comment = false;
+          }
+        }
+      }
+
+      self.i += 1;
+
+      return Some((
+        c,
+        self.i - 1,
+        c.is_whitespace()
+          || self.inside_a_single_line_comment
+          || self.inside_a_multi_line_comment
+          || self.inside_string,
+      ));
+    }
+
+    None
+  }
 }
