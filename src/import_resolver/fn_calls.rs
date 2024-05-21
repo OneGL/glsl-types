@@ -16,6 +16,7 @@ pub fn rename_imported_function_calls(
     imports,
     file_path,
   };
+
   ast.visit_mut(&mut visitor);
 
   return visitor.fn_name_manager.clone();
@@ -33,10 +34,19 @@ impl FnCallVisitor {
       FunIdentifier::Expr(expr) => {
         if let Expr::Dot(box_expr, imported_fn) = expr.as_ref() {
           if let Expr::Variable(import_identifier) = box_expr.as_ref() {
-            let import_path = self.imports.get(import_identifier.as_str()).unwrap();
+            let import_path = match self.imports.get(import_identifier.as_str()) {
+              Some(path) => path,
+              None => {
+                // Here the user is using the dot notation to call a function
+                // but the identifier before the dot is not an import
+                return;
+              }
+            };
+
             let fn_name = self
               .fn_name_manager
               .get_fn_name(imported_fn.as_str(), import_path);
+
             let identifier = Identifier::new(fn_name).unwrap();
             *call = FunIdentifier::Identifier(identifier);
           }
