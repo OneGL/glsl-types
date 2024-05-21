@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FunctionNameManager {
   // fn_name -> owner (file)
   fn_names: HashMap<String, PathBuf>,
