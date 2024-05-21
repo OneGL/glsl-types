@@ -148,6 +148,10 @@ impl ImportResolver {
     );
 
     // Transpile the shader AST back to GLSL
+    for struct_definition in visitor.struct_definitions {
+      transpiler::glsl::show_struct(&mut output, &struct_definition);
+    }
+
     for fn_definition in visitor.fn_definitions {
       transpiler::glsl::show_function_definition(&mut output, &fn_definition);
     }
