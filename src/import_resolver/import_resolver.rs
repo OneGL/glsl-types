@@ -101,7 +101,7 @@ impl ImportResolver {
       output += &file.contents;
 
       for (import_identifier, import_path) in file.imports {
-        output = rename_fn_call_inplace(
+        output = update_imported_fn_calls(
           &output,
           &import_identifier,
           &import_path,
@@ -161,7 +161,7 @@ fn move_glsl_version_to_top(content: String) -> String {
   return lines.join("\n");
 }
 
-fn rename_fn_call_inplace(
+fn update_imported_fn_calls(
   source: &str,
   import_identifier: &str,
   import_path: &PathBuf,
@@ -172,16 +172,17 @@ fn rename_fn_call_inplace(
   let import_identifier_with_dot = format!("{}.", import_identifier);
   let mut iter = WhitespaceSkippingIterator::new(source);
 
-  while let Some((c, i, w)) = iter.next() {
+  while let Some((c, i, is_whitespace)) = iter.next() {
     output.push(c);
 
-    // We want to keep the whitespace
-    if w {
+    // Skip processing if current character is whitespace
+    if is_whitespace {
       continue;
     }
 
+    // Skip processing if the remaining source is shorter than the import identifier
     if i + import_identifier_with_dot.len() > source.len() {
-      break;
+      continue;
     }
 
     let slice = &source[i..i + import_identifier_with_dot.len()];
@@ -193,8 +194,8 @@ fn rename_fn_call_inplace(
       iter.i += import_identifier_with_dot.len() - 1;
       let mut fn_name = String::new();
 
-      while let Some((c, _, w)) = iter.next() {
-        if w {
+      while let Some((c, _, is_whitespace)) = iter.next() {
+        if is_whitespace {
           continue;
         }
 
