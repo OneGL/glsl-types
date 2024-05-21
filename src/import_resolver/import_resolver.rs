@@ -12,12 +12,21 @@ use super::fn_definitions::rename_functions_to_avoid_collisions;
 use super::fn_name_manager::FunctionNameManager;
 use super::graph::Graph;
 
-pub fn resolve_imports(file: &PathBuf) -> String {
+#[derive(Debug)]
+pub enum ImportError {
+  CycleDetected,
+}
+
+pub fn resolve_imports(file: &PathBuf) -> Result<String, ImportError> {
   let mut resolver = ImportResolver::new();
 
-  resolver.build_import_graph(file);
+  resolver.build_import_graph(file)?;
 
-  return move_glsl_version_to_top(resolver.combine_files(file, &mut HashSet::new(), true));
+  return Ok(move_glsl_version_to_top(resolver.combine_files(
+    file,
+    &mut HashSet::new(),
+    true,
+  )));
 }
 
 struct ImportResolver {
@@ -35,20 +44,20 @@ impl ImportResolver {
     }
   }
 
-  fn build_import_graph(&mut self, file_path: &PathBuf) -> &Graph {
+  fn build_import_graph(&mut self, file_path: &PathBuf) -> Result<&Graph, ImportError> {
     let file_imports = self.file_manager.get_file_imports(&file_path);
 
     for (_, path) in file_imports {
       self.graph.add_edge(file_path.clone(), path.clone());
 
       if self.graph.has_cycle() {
-        panic!("Cycle detected in the import graph");
+        return Err(ImportError::CycleDetected);
       }
 
-      self.build_import_graph(&path);
+      self.build_import_graph(&path)?;
     }
 
-    return &self.graph;
+    return Ok(&self.graph);
   }
 
   fn combine_files(
