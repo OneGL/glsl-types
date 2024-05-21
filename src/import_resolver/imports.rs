@@ -2,7 +2,7 @@ use glsl::syntax::TranslationUnit;
 use glsl::visitor::{Host, Visit, Visitor};
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub fn get_file_imports(
   ast: &mut TranslationUnit,
@@ -32,10 +32,7 @@ impl Visitor for FileImports {
   fn visit_import(&mut self, import: &glsl::syntax::Import) -> Visit {
     let path = match &import.path {
       glsl::syntax::Path::Absolute(path) => PathBuf::from(path),
-      glsl::syntax::Path::Relative(path) => {
-        let path = Path::new(path);
-        self.base_path.join(path.strip_prefix("./").unwrap_or(path))
-      }
+      glsl::syntax::Path::Relative(path) => self.base_path.join(path).canonicalize().unwrap(),
     };
 
     self.imports.insert(import.identifier.to_string(), path);
