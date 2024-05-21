@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use glsl::parser::Parse as _;
@@ -22,7 +23,7 @@ pub fn resolve_imports(file: &PathBuf) -> String {
 struct ImportResolver {
   graph: Graph,
   file_manager: FileManager,
-  function_names: FunctionNameManager,
+  fn_names: FunctionNameManager,
 }
 
 impl ImportResolver {
@@ -30,7 +31,7 @@ impl ImportResolver {
     Self {
       graph: Graph::new(),
       file_manager: FileManager::new(),
-      function_names: FunctionNameManager::new(),
+      fn_names: FunctionNameManager::new(),
     }
   }
 
@@ -56,6 +57,18 @@ impl ImportResolver {
     visited: &mut HashSet<PathBuf>,
     is_root: bool,
   ) -> String {
+    // Here we are reserving the function names of the root file
+    // if we do it now, the root file will preserve its function names
+    if is_root {
+      let file = self.file_manager.get_file(node);
+      let mut ast = ShaderStage::parse(&file.contents).unwrap();
+
+      let (fn_names, _) =
+        rename_functions_to_avoid_collisions(&mut ast, self.fn_names.clone(), node);
+
+      self.fn_names = fn_names;
+    }
+
     let mut output = String::new();
 
     if visited.contains(node) {
@@ -83,7 +96,7 @@ impl ImportResolver {
     let file = self.file_manager.get_file(file_path);
     let mut ast = ShaderStage::parse(&file.contents).unwrap();
 
-    let fn_names = self.function_names.clone();
+    let fn_names = self.fn_names.clone();
 
     let (fn_names, fn_definitions) =
       rename_functions_to_avoid_collisions(&mut ast, fn_names, file_path);
@@ -91,10 +104,19 @@ impl ImportResolver {
     let fn_names =
       rename_imported_function_calls(&mut ast, fn_names, file.imports, file_path.clone());
 
-    self.function_names = fn_names;
+    self.fn_names = fn_names;
 
     // Transpile the shader AST back to GLSL
     let mut output = String::new();
+
+    output += &format!(
+      "\n\n// File: {}\n\n",
+      file_path
+        .file_name()
+        .unwrap_or(OsStr::new("unknown"))
+        .to_str()
+        .unwrap_or("unknown")
+    );
 
     if is_root {
       transpiler::glsl::show_translation_unit(&mut output, &ast);
