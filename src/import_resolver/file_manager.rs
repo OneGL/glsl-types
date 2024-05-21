@@ -45,7 +45,7 @@ impl FileManager {
       }
     };
 
-    let imports = get_file_imports(&mut ast, file_path);
+    let imports = get_file_imports(&mut ast, file_path)?;
 
     let file = File {
       contents,

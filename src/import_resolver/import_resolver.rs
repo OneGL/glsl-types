@@ -9,11 +9,12 @@ use super::fn_definitions::rename_functions_to_avoid_collisions;
 use super::fn_name_manager::FunctionNameManager;
 use super::graph::Graph;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ImportError {
   CycleDetected,
   CouldNotParseFile(String),
   FileNotFound(String),
+  DuplicateImportIdentifier(String),
 }
 
 pub fn resolve_imports(file: &PathBuf) -> Result<String, ImportError> {

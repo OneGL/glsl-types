@@ -4,19 +4,27 @@ use glsl::visitor::{Host, Visit, Visitor};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use super::import_resolver::ImportError;
+
 pub fn get_file_imports(
   ast: &mut TranslationUnit,
   file_path: &PathBuf,
-) -> HashMap<String, PathBuf> {
+) -> Result<HashMap<String, PathBuf>, ImportError> {
   let mut visitor = FileImports::new(file_path);
   ast.visit(&mut visitor);
-  return visitor.imports;
+
+  if let Some(error) = visitor.error {
+    return Err(error);
+  }
+
+  return Ok(visitor.imports);
 }
 
 #[derive(Clone, Debug)]
 pub struct FileImports {
   base_path: PathBuf,
   imports: HashMap<String, PathBuf>,
+  error: Option<ImportError>,
 }
 
 impl FileImports {
@@ -24,6 +32,7 @@ impl FileImports {
     Self {
       base_path: file_path.parent().unwrap().to_path_buf(),
       imports: HashMap::new(),
+      error: None,
     }
   }
 }
@@ -35,7 +44,14 @@ impl Visitor for FileImports {
       glsl::syntax::Path::Relative(path) => self.base_path.join(path).canonicalize().unwrap(),
     };
 
-    self.imports.insert(import.identifier.to_string(), path);
-    Visit::Parent
+    let identifier = import.identifier.to_string();
+
+    if self.imports.contains_key(&identifier) {
+      self.error = Some(ImportError::DuplicateImportIdentifier(identifier));
+      return Visit::Parent;
+    }
+
+    self.imports.insert(identifier, path);
+    return Visit::Parent;
   }
 }
