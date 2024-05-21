@@ -32,7 +32,10 @@ impl Visitor for FileImports {
   fn visit_import(&mut self, import: &glsl::syntax::Import) -> Visit {
     let path = match &import.path {
       glsl::syntax::Path::Absolute(path) => PathBuf::from(path),
-      glsl::syntax::Path::Relative(path) => self.base_path.join(Path::new(path)),
+      glsl::syntax::Path::Relative(path) => {
+        let path = Path::new(path);
+        self.base_path.join(path.strip_prefix("./").unwrap_or(path))
+      }
     };
 
     self.imports.insert(import.identifier.to_string(), path);
