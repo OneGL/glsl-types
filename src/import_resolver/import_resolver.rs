@@ -13,6 +13,7 @@ use super::graph::Graph;
 pub enum ImportError {
   CycleDetected,
   CouldNotParseFile(String),
+  FileNotFound(String),
 }
 
 pub fn resolve_imports(file: &PathBuf) -> Result<String, ImportError> {

@@ -27,7 +27,14 @@ impl FileManager {
       return Ok(file.clone());
     }
 
-    let contents = std::fs::read_to_string(file_path).unwrap();
+    let contents = match std::fs::read_to_string(file_path) {
+      Ok(contents) => contents,
+      Err(_) => {
+        return Err(ImportError::FileNotFound(
+          file_path.to_str().unwrap().to_string(),
+        ))
+      }
+    };
 
     let mut ast = match ShaderStage::parse(&contents) {
       Ok(ast) => ast,
