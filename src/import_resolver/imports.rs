@@ -41,7 +41,13 @@ impl Visitor for FileImports {
   fn visit_import(&mut self, import: &glsl::syntax::Import) -> Visit {
     let path = match &import.path {
       glsl::syntax::Path::Absolute(path) => PathBuf::from(path),
-      glsl::syntax::Path::Relative(path) => self.base_path.join(path).canonicalize().unwrap(),
+      glsl::syntax::Path::Relative(path) => match self.base_path.join(path).canonicalize() {
+        Ok(path) => path,
+        Err(_) => {
+          self.error = Some(ImportError::InvalidFilePath(path.clone()));
+          return Visit::Parent;
+        }
+      },
     };
 
     let identifier = import.identifier.to_string();

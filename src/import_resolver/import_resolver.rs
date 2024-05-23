@@ -20,6 +20,7 @@ pub enum ImportError {
     import_identifier: String,
     import_path: PathBuf,
   },
+  InvalidFilePath(String),
 }
 
 pub fn resolve_imports(file: &PathBuf) -> Result<String, ImportError> {
