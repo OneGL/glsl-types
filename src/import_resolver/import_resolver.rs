@@ -2,6 +2,8 @@ use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
+use crate::log::{print_level, Level};
+
 use super::file_manager::FileManager;
 use super::graph::Graph;
 
@@ -24,6 +26,57 @@ pub enum ImportError {
     second_file: PathBuf,
     definition_type: DefinitionErrorType,
   },
+}
+
+pub fn try_resolve_imports(file: &PathBuf) -> Option<String> {
+  match resolve_imports(file) {
+    Ok(output) => Some(output),
+    Err(err) => {
+      match err {
+        ImportError::CouldNotParseFile(file_path) => {
+          print_level(Level::ERROR);
+          println!("Could not parse file: {}", file_path.to_str().unwrap());
+        }
+        ImportError::CycleDetected(file_path, import_path) => {
+          print_level(Level::ERROR);
+          println!(
+            "Cycle detected between files: {} and {}",
+            file_path.to_str().unwrap(),
+            import_path.to_str().unwrap()
+          );
+        }
+        ImportError::FileNotFound(file_path) => {
+          print_level(Level::ERROR);
+          println!("File not found: {}", file_path.to_str().unwrap());
+        }
+        ImportError::DuplicateImport(path) => {
+          print_level(Level::ERROR);
+          println!("Duplicate import identifier: {}", path.to_str().unwrap());
+        }
+        ImportError::DuplicateDefinition {
+          name,
+          first_file,
+          second_file,
+          definition_type,
+        } => {
+          print_level(Level::ERROR);
+          println!(
+            "Duplicate definition of {} in files: {} and {}, type {:?}",
+            name,
+            first_file.to_str().unwrap(),
+            second_file.to_str().unwrap(),
+            definition_type
+          );
+        }
+        ImportError::InvalidFilePath(path) => {
+          print_level(Level::ERROR);
+          println!("Invalid file path: {}", path);
+        }
+      }
+
+      return None;
+    }
+  }
 }
 
 pub fn resolve_imports(file: &PathBuf) -> Result<String, ImportError> {

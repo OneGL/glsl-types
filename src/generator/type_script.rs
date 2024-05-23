@@ -1,40 +1,20 @@
-use crate::log::{print_level, Level};
+use crate::{
+  log::{print_level, Level},
+  utils::get_shader_type::ShaderType,
+};
 
 use super::common;
 use colored::Colorize;
 use glsl::syntax::TypeSpecifierNonArray;
 
 pub fn generate_ts_types_file(
+  vertex_content: String,
+  fragment_content: String,
   vertex_file_path: &std::path::PathBuf,
-  fragment_file_path: &std::path::PathBuf,
   output_folder: &std::path::PathBuf,
 ) -> bool {
-  let vertex_file = match std::fs::read_to_string(&vertex_file_path) {
-    Ok(file) => file,
-    Err(_) => {
-      print_level(Level::ERROR);
-      println!(
-        "Failed to read the vertex shader file: {}",
-        vertex_file_path.to_str().unwrap().bright_red().bold()
-      );
-      return false;
-    }
-  };
-
-  let fragment_file = match std::fs::read_to_string(&fragment_file_path) {
-    Ok(file) => file,
-    Err(_) => {
-      print_level(Level::ERROR);
-      println!(
-        "Failed to read the fragment shader file: {}",
-        fragment_file_path.to_str().unwrap().bright_red().bold()
-      );
-      return false;
-    }
-  };
-
-  let vertex_data = common::extract_shader_data(&vertex_file, &vertex_file_path);
-  let fragment_data = common::extract_shader_data(&fragment_file, &fragment_file_path);
+  let vertex_data = common::extract_shader_data(&vertex_content, ShaderType::Vertex);
+  let fragment_data = common::extract_shader_data(&fragment_content, ShaderType::Fragment);
 
   // We need to combine the uniforms from both the vertex and fragment shaders.
   // We need to check that if a uniform is defined in both shaders, the type is the same.
@@ -143,11 +123,11 @@ pub fn generate_ts_types_file(
 
   output_file.push_str(&format!(
     "const VERTEX_SHADER_SOURCE = /* glsl */ `{}`;\n\n",
-    &vertex_file
+    &vertex_content
   ));
   output_file.push_str(&format!(
     "const FRAGMENT_SHADER_SOURCE = /* glsl */ `{}`;\n\n",
-    &fragment_file
+    &fragment_content
   ));
 
   let output_file_name = vertex_file_path.file_stem().unwrap().to_str().unwrap();

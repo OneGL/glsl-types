@@ -5,7 +5,6 @@ use std::time::Duration;
 use crate::error_check::error_check;
 use crate::generator::type_script;
 use crate::import_resolver;
-use crate::import_resolver::import_resolver::ImportError;
 use crate::log;
 use crate::utils::get_shader_type::get_shader_type;
 use crate::utils::get_shader_type::ShaderType;
@@ -92,88 +91,67 @@ pub fn start(args: Vec<String>) -> () {
     };
 
     // Measure the time it takes to generate the types
-    // let start = std::time::Instant::now();
-    // let success = type_script::generate_ts_types_file(&vertex_path, &fragment_path, &output_folder);
+    let start = std::time::Instant::now();
 
-    // if success {
-    //   print_level(log::Level::INFO);
-    //   print!(
-    //     "Types generated for the shader file: {}",
-    //     file_path_relative_to_input
-    //       .to_str()
-    //       .unwrap()
-    //       .blue()
-    //       .underline()
-    //   );
+    let combined_vertex =
+      if let Some(output) = import_resolver::import_resolver::try_resolve_imports(&vertex_path) {
+        output
+      } else {
+        return;
+      };
 
-    //   println!(
-    //     " {}",
-    //     format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
-    //   );
+    let combined_fragment =
+      if let Some(output) = import_resolver::import_resolver::try_resolve_imports(&fragment_path) {
+        output
+      } else {
+        return;
+      };
 
-    match import_resolver::import_resolver::resolve_imports(&vertex_path) {
-      Ok(combined_vertex) => {
-        println!("combined_vertex:\n{}", combined_vertex);
-
-        match error_check(&combined_vertex) {
-          Ok(errors) => {
-            for error in errors {
-              println!("Error: {:?}", error);
-            }
-          }
-          Err(_) => {
-            println!("Error checking failed");
-          }
+    match error_check(&combined_vertex) {
+      Ok(errors) => {
+        for error in errors {
+          println!("Error: {:?}", error);
         }
       }
-      Err(err) => match err {
-        ImportError::CouldNotParseFile(file_path) => {
-          println!("Could not parse file: {}", file_path.to_str().unwrap());
-        }
-        ImportError::CycleDetected(file_path, import_path) => {
-          println!(
-            "Cycle detected between files: {} and {}",
-            file_path.to_str().unwrap(),
-            import_path.to_str().unwrap()
-          );
-        }
-        ImportError::FileNotFound(file_path) => {
-          println!("File not found: {}", file_path.to_str().unwrap());
-        }
-        ImportError::DuplicateImport(path) => {
-          println!("Duplicate import identifier: {}", path.to_str().unwrap());
-        }
-        ImportError::DuplicateDefinition {
-          name,
-          first_file,
-          second_file,
-          definition_type,
-        } => {
-          println!(
-            "Duplicate definition of {} in files: {} and {}, type {:?}",
-            name,
-            first_file.to_str().unwrap(),
-            second_file.to_str().unwrap(),
-            definition_type
-          );
-        }
-        ImportError::InvalidFilePath(path) => {
-          println!("Invalid file path: {}", path);
-        }
-      },
+      Err(_) => {
+        println!("Error checking failed");
+      }
     }
 
-    // let combined_vertex = .unwrap();
-    // println!("{}", combined_vertex);
+    match error_check(&combined_fragment) {
+      Ok(errors) => {
+        for error in errors {
+          println!("Error: {:?}", error);
+        }
+      }
+      Err(_) => {
+        println!("Error checking failed");
+      }
+    }
 
-    // println!("");
-    // println!("");
-    // println!("");
+    let success = type_script::generate_ts_types_file(
+      combined_vertex,
+      combined_fragment,
+      &vertex_path,
+      &output_folder,
+    );
 
-    // let combined_fragment =
-    //   import_resolver::import_resolver::resolve_imports(&fragment_path).unwrap();
-    // println!("{}", combined_fragment);
-    // }
+    if success {
+      print_level(log::Level::INFO);
+      print!(
+        "Files processed: {}",
+        file_path_relative_to_input
+          .to_str()
+          .unwrap()
+          .blue()
+          .underline()
+      );
+
+      println!(
+        " {}",
+        format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
+      );
+    }
   });
 
   let mut watcher = notify::recommended_watcher(move |res: notify::Result<Event>| match res {

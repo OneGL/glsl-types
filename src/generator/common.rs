@@ -1,10 +1,9 @@
+use crate::utils::get_shader_type::ShaderType;
 use glsl::parser::Parse as _;
 use glsl::syntax::{
   ShaderStage, SingleDeclaration, StorageQualifier, TypeQualifierSpec, TypeSpecifierNonArray,
 };
 use glsl::visitor::{Host, Visit, Visitor};
-
-use crate::utils::get_shader_type::{get_shader_type, ShaderType};
 
 pub fn capitalize_first_letter(s: &str) -> String {
   s.chars().next().unwrap().to_uppercase().collect::<String>() + &s[1..]
@@ -86,14 +85,15 @@ impl Visitor for ShaderData {
   }
 }
 
-pub fn extract_shader_data(file: &String, file_path: &std::path::PathBuf) -> ShaderData {
-  let stage: Result<glsl::syntax::TranslationUnit, glsl::parser::ParseError> = ShaderStage::parse(file);
+pub fn extract_shader_data(file: &String, shader_type: ShaderType) -> ShaderData {
+  let stage: Result<glsl::syntax::TranslationUnit, glsl::parser::ParseError> =
+    ShaderStage::parse(file);
 
   let mut shader_data = ShaderData {
     uniforms: Vec::new(),
     varyings: Vec::new(),
     attributes: Vec::new(),
-    shader_type: get_shader_type(file_path).unwrap(),
+    shader_type,
   };
 
   match stage {
