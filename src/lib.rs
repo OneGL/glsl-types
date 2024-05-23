@@ -6,6 +6,7 @@ mod generator;
 mod log;
 mod import_resolver;
 mod utils;
+mod error_check;
 
 #[macro_use]
 extern crate napi_derive;
