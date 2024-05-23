@@ -13,7 +13,7 @@ pub enum DefinitionErrorType {
 
 #[derive(Debug, Clone)]
 pub enum ImportError {
-  CycleDetected,
+  CycleDetected(PathBuf, PathBuf),
   CouldNotParseFile(PathBuf),
   FileNotFound(PathBuf),
   DuplicateImport(PathBuf),
@@ -100,7 +100,7 @@ impl ImportResolver {
       self.graph.add_edge(file_path.clone(), path.clone());
 
       if self.graph.has_cycle() {
-        return Err(ImportError::CycleDetected);
+        return Err(ImportError::CycleDetected(file_path.clone(), path.clone()));
       }
 
       self.build_import_graph(&path)?;

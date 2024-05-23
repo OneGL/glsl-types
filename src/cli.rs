@@ -130,8 +130,12 @@ pub fn start(args: Vec<String>) -> () {
         ImportError::CouldNotParseFile(file_path) => {
           println!("Could not parse file: {}", file_path.to_str().unwrap());
         }
-        ImportError::CycleDetected => {
-          println!("Cycle detected");
+        ImportError::CycleDetected(file_path, import_path) => {
+          println!(
+            "Cycle detected between files: {} and {}",
+            file_path.to_str().unwrap(),
+            import_path.to_str().unwrap()
+          );
         }
         ImportError::FileNotFound(file_path) => {
           println!("File not found: {}", file_path.to_str().unwrap());
