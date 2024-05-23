@@ -233,10 +233,16 @@ fn update_imported_fn_calls(
       let start = token1.word_start;
       let end = token3.word_start + token3.word.len();
 
-      // Add space after the new function name to match the original
-      // width of the function name
-      let spaces_to_add = (end - start) - new_fn_name.len();
-      let new_fn_name = format!("{}{}", new_fn_name, " ".repeat(spaces_to_add));
+      // Add whitespace to the end of the new function name to keep the same length
+      let mut line_jumps = String::new();
+      for c in source[start..end].chars() {
+        if c == '\n' {
+          line_jumps.push('\n');
+        }
+      }
+
+      let spaces_to_add = (end - start) - new_fn_name.len() - line_jumps.len();
+      let new_fn_name = format!("{}{}{}", " ".repeat(spaces_to_add), line_jumps, new_fn_name);
       output.replace_range(start..end, &new_fn_name);
     }
   }
