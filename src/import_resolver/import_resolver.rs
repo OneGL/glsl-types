@@ -205,6 +205,34 @@ fn update_imported_fn_calls(
     let token2 = &tokens.get(i + 1).unwrap_or(&DEFAULT_TOKEN);
     let token3 = &tokens.get(i + 2).unwrap_or(&DEFAULT_TOKEN);
 
+    // Remove the import statement
+    if token1.word == "import" {
+      let start = token1.word_start;
+
+      let mut index = start;
+      let mut end = start;
+      let mut line_jumps = 0;
+
+      while index < source.len() {
+        let char = source.chars().nth(index).unwrap();
+
+        if char == ';' {
+          end = index;
+          break;
+        }
+
+        if char == '\n' {
+          line_jumps += 1;
+        }
+
+        index += 1;
+      }
+
+      let spaces_to_add = end - start + 1;
+      let new_fn_name = " ".repeat(spaces_to_add + line_jumps);
+      output.replace_range(start..end + 1, &new_fn_name);
+    }
+
     if token1.word == import_identifier {
       import_identifier_found = true;
     }
