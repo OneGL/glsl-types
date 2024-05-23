@@ -113,7 +113,7 @@ pub fn start(args: Vec<String>) -> () {
 
     match import_resolver::import_resolver::resolve_imports(&vertex_path) {
       Ok(combined_vertex) => {
-        println!("{}", combined_vertex);
+        println!("combined_vertex:\n{}", combined_vertex);
 
         match error_check(&combined_vertex) {
           Ok(errors) => {
@@ -136,17 +136,22 @@ pub fn start(args: Vec<String>) -> () {
         ImportError::FileNotFound(file_path) => {
           println!("File not found: {}", file_path.to_str().unwrap());
         }
-        ImportError::DuplicateImportIdentifier(identifier) => {
-          println!("Duplicate import identifier: {}", identifier);
+        ImportError::DuplicateImport(path) => {
+          println!("Duplicate import identifier: {}", path.to_str().unwrap());
         }
-        ImportError::FileDoesNotExportFunction {
-          fn_name,
-          import_identifier,
-          import_path,
+        ImportError::DuplicateDefinition {
+          name,
+          first_file,
+          second_file,
+          definition_type,
         } => {
-          println!("File does not export function: {}", fn_name);
-          println!("Import identifier: {}", import_identifier);
-          println!("Import path: {}", import_path.to_str().unwrap());
+          println!(
+            "Duplicate definition of {} in files: {} and {}, type {:?}",
+            name,
+            first_file.to_str().unwrap(),
+            second_file.to_str().unwrap(),
+            definition_type
+          );
         }
         ImportError::InvalidFilePath(path) => {
           println!("Invalid file path: {}", path);
