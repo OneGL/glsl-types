@@ -179,6 +179,11 @@ fn move_glsl_version_to_top(content: String) -> String {
   return lines.join("\n");
 }
 
+static DEFAULT_TOKEN: Token = Token {
+  word: String::new(),
+  word_start: 0,
+};
+
 fn update_imported_fn_calls(
   source: &str,
   import_identifier: &str,
@@ -187,42 +192,28 @@ fn update_imported_fn_calls(
 ) -> Result<String, ImportError> {
   // We need to find the following pattern: <import_identifier>.<prev_fn_name>
   let mut output = String::new();
-  let mut iter = WhitespaceSkippingIterator::new(source);
-  let import_identifier_with_dot = format!("{}.", import_identifier);
+  output.push_str(source);
 
-  while let Some((c, i, is_whitespace)) = iter.next() {
-    output.push(c);
+  let tokens = get_tokens_from_source(source);
 
-    // Skip processing if current character is whitespace
-    if is_whitespace {
-      continue;
+  for i in 0..tokens.len() {
+    let mut import_identifier_found = false;
+    let mut dot_found = false;
+
+    let token1 = &tokens[i];
+    let token2 = &tokens.get(i + 1).unwrap_or(&DEFAULT_TOKEN);
+    let token3 = &tokens.get(i + 2).unwrap_or(&DEFAULT_TOKEN);
+
+    if token1.word == import_identifier {
+      import_identifier_found = true;
     }
 
-    // Skip processing if the remaining source is shorter than the import identifier
-    if i + import_identifier_with_dot.len() > source.len() {
-      continue;
+    if token2.word == "." {
+      dot_found = true;
     }
 
-    let slice = &source[i..i + import_identifier_with_dot.len()];
-
-    // We need to check if the slice is the import identifier
-    // move forward to check if the next character is a dot
-    // and then get the function name between the dot and the opening parenthesis
-    if slice == import_identifier_with_dot {
-      iter.i += import_identifier_with_dot.len() - 1;
-      let mut fn_name = String::new();
-
-      while let Some((c, _, is_whitespace)) = iter.next() {
-        if is_whitespace {
-          continue;
-        }
-
-        if c == '(' {
-          break;
-        }
-
-        fn_name.push(c);
-      }
+    if import_identifier_found && dot_found {
+      let fn_name = &token3.word;
 
       let file_function_names = name_manager
         .file_fn_names
@@ -231,21 +222,78 @@ fn update_imported_fn_calls(
 
       if !file_function_names.contains(&fn_name) {
         return Err(ImportError::FileDoesNotExportFunction {
-          fn_name,
+          fn_name: fn_name.to_string(),
           import_identifier: import_identifier.to_string(),
           import_path: import_path.clone(),
         });
       }
 
       let new_fn_name = name_manager.get_fn_name(&fn_name, import_path);
+      let start = token1.word_start;
+      let end = token3.word_start + token3.word.len();
 
-      output.pop();
-      output += &new_fn_name;
-      output += "(";
+      // Add space after the new function name to match the original
+      // width of the function name
+      let spaces_to_add = (end - start) - new_fn_name.len();
+      let new_fn_name = format!("{}{}", new_fn_name, " ".repeat(spaces_to_add));
+      output.replace_range(start..end, &new_fn_name);
     }
   }
 
   return Ok(output);
+}
+
+fn get_tokens_from_source(source: &str) -> Vec<Token> {
+  let mut iter = WhitespaceSkippingIterator::new(source);
+  let mut words = Vec::new();
+
+  while let Some(word) = get_next_token(&mut iter) {
+    words.push(word);
+  }
+
+  return words;
+}
+
+#[derive(Debug)]
+struct Token {
+  pub word: String,
+  pub word_start: usize,
+}
+
+fn get_next_token(iter: &mut WhitespaceSkippingIterator) -> Option<Token> {
+  let mut word = String::new();
+  let mut word_start = None;
+
+  while let Some((c, _, is_whitespace)) = iter.next() {
+    if is_whitespace {
+      continue;
+    }
+
+    if !c.is_alphanumeric() && c != '_' {
+      return Some(Token {
+        word: c.to_string(),
+        word_start: iter.i - 1,
+      });
+    }
+
+    word.push(c);
+    word_start = Some(iter.i - 1);
+    break;
+  }
+
+  while let Some((c, _, is_whitespace)) = iter.peek() {
+    if is_whitespace || (!c.is_alphanumeric() && c != '_') {
+      break;
+    }
+
+    word.push(c);
+    iter.next();
+  }
+
+  match word_start {
+    Some(word_start) => Some(Token { word, word_start }),
+    None => None,
+  }
 }
 
 struct WhitespaceSkippingIterator {
@@ -308,6 +356,22 @@ impl WhitespaceSkippingIterator {
       return Some((
         c,
         self.i - 1,
+        c.is_whitespace()
+          || self.inside_a_single_line_comment
+          || self.inside_a_multi_line_comment
+          || self.inside_string,
+      ));
+    }
+
+    None
+  }
+
+  fn peek(&self) -> Option<(char, usize, bool)> {
+    if self.i < self.chars.len() {
+      let c = self.chars[self.i];
+      return Some((
+        c,
+        self.i,
         c.is_whitespace()
           || self.inside_a_single_line_comment
           || self.inside_a_multi_line_comment
