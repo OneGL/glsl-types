@@ -197,9 +197,16 @@ fn move_glsl_version_to_top(content: String) -> String {
   let mut version_line = None;
 
   for (i, line) in lines.iter().enumerate() {
-    if line.starts_with("#version") {
-      version_line = Some(i);
-      break;
+    let parts = line.trim().split_whitespace().collect::<Vec<&str>>();
+
+    if parts.len() >= 2 {
+      if parts[0] == "#" && parts[1] == "version" {
+        version_line = Some(i);
+        break;
+      } else if parts[0] == "#version" {
+        version_line = Some(i);
+        break;
+      }
     }
   }
 
