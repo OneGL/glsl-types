@@ -86,7 +86,7 @@ pub fn resolve_imports(file: &PathBuf) -> Result<String, ImportError> {
   let output = resolver.combine_files(file, &mut HashSet::new());
   resolver.check_for_duplicate_definitions()?;
   let output = move_glsl_version_to_top(output);
-
+  let output = comment_include(output);
   return Ok(output);
 }
 
@@ -211,9 +211,27 @@ fn move_glsl_version_to_top(content: String) -> String {
   }
 
   if let Some(version_line) = version_line {
-    let version_line = lines.remove(version_line);
-    lines.insert(0, version_line);
+    let version_line_content = lines.remove(version_line);
+    lines.insert(version_line, "\n");
+    lines.insert(0, version_line_content);
   }
 
   return lines.join("\n");
+}
+
+fn comment_include(content: String) -> String {
+  let lines = content.lines();
+  let mut new_lines = Vec::new();
+
+  for line in lines {
+    let parts = line.trim().split_whitespace().collect::<Vec<&str>>();
+
+    if parts.len() >= 2 && ((parts[0] == "#" && parts[1] == "include") || parts[0] == "#include") {
+      new_lines.push(format!("// {}", line));
+    } else {
+      new_lines.push(line.to_string());
+    }
+  }
+
+  new_lines.join("\n")
 }
