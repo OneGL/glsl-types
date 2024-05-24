@@ -26,7 +26,11 @@ fn get_error_data(output: &str) -> Vec<ErrorData> {
 
     let colon_index = line.find(':').unwrap();
     let line_number = line[0..colon_index].parse::<u32>().unwrap();
-    let message = line[colon_index + 1..].trim().to_string();
+    let mut message = line[colon_index + 1..].trim().to_string();
+
+    if message.starts_with("'' :  ") {
+      message = message[6..].to_string();
+    }
 
     errors.push(ErrorData {
       message,
@@ -55,8 +59,6 @@ pub fn error_check(source: &str) -> Result<Vec<ErrorData>, CheckError> {
     .join(format!("glslangValidator{}", platform_name));
 
   let stage = "vert";
-
-  println!("Validator path: {:?}", validator_path);
 
   let mut child = Command::new(validator_path)
     .arg("--stdin")

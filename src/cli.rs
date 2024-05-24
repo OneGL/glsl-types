@@ -109,8 +109,13 @@ pub fn start(args: Vec<String>) -> () {
 
     match error_check(&combined_vertex) {
       Ok(errors) => {
-        for error in errors {
-          println!("Error: {:?}", error);
+        for error in &errors {
+          print_level(Level::ERROR);
+          println!("{}", error.message);
+        }
+
+        if errors.len() > 0 {
+          return;
         }
       }
       Err(_) => {
@@ -120,8 +125,13 @@ pub fn start(args: Vec<String>) -> () {
 
     match error_check(&combined_fragment) {
       Ok(errors) => {
-        for error in errors {
-          println!("Error: {:?}", error);
+        for error in &errors {
+          print_level(Level::ERROR);
+          println!("{}", error.message);
+        }
+
+        if errors.len() > 0 {
+          return;
         }
       }
       Err(_) => {
