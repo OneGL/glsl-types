@@ -1,8 +1,10 @@
+use crate::log::{print_level, Level};
+use colored::Colorize;
+use core::fmt;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
-use std::path::PathBuf;
-
-use crate::log::{print_level, Level};
+use std::fmt::{Display, Formatter};
+use std::path::{Path, PathBuf};
 
 use super::file_manager::FileManager;
 use super::graph::Graph;
@@ -11,6 +13,15 @@ use super::graph::Graph;
 pub enum DefinitionErrorType {
   Function,
   Struct,
+}
+
+impl Display for DefinitionErrorType {
+  fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    match self {
+      DefinitionErrorType::Function => write!(f, "function"),
+      DefinitionErrorType::Struct => write!(f, "struct"),
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -28,30 +39,44 @@ pub enum ImportError {
   },
 }
 
-pub fn try_resolve_imports(file: &PathBuf) -> Option<String> {
+pub fn try_resolve_imports(file: &PathBuf, input_folder_parent: &Path) -> Option<String> {
   match resolve_imports(file) {
     Ok(output) => Some(output),
     Err(err) => {
       match err {
         ImportError::CouldNotParseFile(file_path) => {
+          let file_path = file_path.strip_prefix(input_folder_parent).unwrap();
           print_level(Level::ERROR);
-          println!("Could not parse file: {}", file_path.to_str().unwrap());
+          println!(
+            "Could not parse file: {}",
+            file_path.to_str().unwrap().blue().underline()
+          );
         }
         ImportError::CycleDetected(file_path, import_path) => {
+          let file_path = file_path.strip_prefix(input_folder_parent).unwrap();
+          let import_path = import_path.strip_prefix(input_folder_parent).unwrap();
           print_level(Level::ERROR);
           println!(
             "Cycle detected between files: {} and {}",
-            file_path.to_str().unwrap(),
-            import_path.to_str().unwrap()
+            file_path.to_str().unwrap().blue().underline(),
+            import_path.to_str().unwrap().blue().underline()
           );
         }
         ImportError::FileNotFound(file_path) => {
+          let file_path = file_path.strip_prefix(input_folder_parent).unwrap();
           print_level(Level::ERROR);
-          println!("File not found: {}", file_path.to_str().unwrap());
+          println!(
+            "File not found: {}",
+            file_path.to_str().unwrap().blue().underline()
+          );
         }
-        ImportError::DuplicateImport(path) => {
+        ImportError::DuplicateImport(file_path) => {
+          let file_path = file_path.strip_prefix(input_folder_parent).unwrap();
           print_level(Level::ERROR);
-          println!("Duplicate import identifier: {}", path.to_str().unwrap());
+          println!(
+            "Duplicate import identifier: {}",
+            file_path.to_str().unwrap().blue().underline()
+          );
         }
         ImportError::DuplicateDefinition {
           name,
@@ -59,18 +84,21 @@ pub fn try_resolve_imports(file: &PathBuf) -> Option<String> {
           second_file,
           definition_type,
         } => {
+          let first_file = first_file.strip_prefix(input_folder_parent).unwrap();
+          let second_file = second_file.strip_prefix(input_folder_parent).unwrap();
+
           print_level(Level::ERROR);
           println!(
-            "Duplicate definition of {} in files: {} and {}, type {:?}",
-            name,
-            first_file.to_str().unwrap(),
-            second_file.to_str().unwrap(),
-            definition_type
+            "Duplicate definition of {} {} in files: {} and {}",
+            definition_type,
+            name.bold(),
+            first_file.to_str().unwrap().blue().underline(),
+            second_file.to_str().unwrap().blue().underline(),
           );
         }
         ImportError::InvalidFilePath(path) => {
           print_level(Level::ERROR);
-          println!("Invalid file path: {}", path);
+          println!("Invalid file path: {}", path.to_string().blue().underline());
         }
       }
 

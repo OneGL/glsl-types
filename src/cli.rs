@@ -93,19 +93,21 @@ pub fn start(args: Vec<String>) -> () {
     // Measure the time it takes to generate the types
     let start = std::time::Instant::now();
 
-    let combined_vertex =
-      if let Some(output) = import_resolver::import_resolver::try_resolve_imports(&vertex_path) {
-        output
-      } else {
-        return;
-      };
+    let combined_vertex = if let Some(output) =
+      import_resolver::import_resolver::try_resolve_imports(&vertex_path, input_folder_parent)
+    {
+      output
+    } else {
+      return;
+    };
 
-    let combined_fragment =
-      if let Some(output) = import_resolver::import_resolver::try_resolve_imports(&fragment_path) {
-        output
-      } else {
-        return;
-      };
+    let combined_fragment = if let Some(output) =
+      import_resolver::import_resolver::try_resolve_imports(&fragment_path, input_folder_parent)
+    {
+      output
+    } else {
+      return;
+    };
 
     match error_check(&combined_vertex) {
       Ok(errors) => {
