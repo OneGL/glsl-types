@@ -71,99 +71,11 @@ pub fn start(args: Vec<String>) -> () {
 
     let file_path = event.paths.first().unwrap();
 
-    // Update the file path to be relative to the input folder
-    let input_folder_canon = std::fs::canonicalize(&input_folder).unwrap();
-    let input_folder_parent = input_folder_canon.parent().unwrap();
-    let file_path_relative_to_input = file_path.strip_prefix(&input_folder_parent).unwrap();
-
-    let (vertex_path, fragment_path) = match ensure_both_shader_files_exist(file_path.clone()) {
-      Ok((vertex_path, fragment_path)) => (vertex_path, fragment_path),
-      Err(err) => match err {
-        LoadShaderError::InvalidInputFile => {
-          // Ignore invalid input files
-          return;
-        }
-        LoadShaderError::MissingShaderPair(shader_type) => {
-          log_missing_shader_error(file_path_relative_to_input, shader_type);
-          return;
-        }
-      },
-    };
-
-    // Measure the time it takes to generate the types
-    let start = std::time::Instant::now();
-
-    let combined_vertex = if let Some(output) =
-      import_resolver::import_resolver::try_resolve_imports(&vertex_path, input_folder_parent)
-    {
-      output
-    } else {
-      return;
-    };
-
-    let combined_fragment = if let Some(output) =
-      import_resolver::import_resolver::try_resolve_imports(&fragment_path, input_folder_parent)
-    {
-      output
-    } else {
-      return;
-    };
-
-    match error_check(&combined_vertex) {
-      Ok(errors) => {
-        for error in &errors {
-          print_level(Level::ERROR);
-          println!("{}", error.message);
-        }
-
-        if errors.len() > 0 {
-          return;
-        }
-      }
-      Err(_) => {
-        println!("Error checking failed");
-      }
-    }
-
-    match error_check(&combined_fragment) {
-      Ok(errors) => {
-        for error in &errors {
-          print_level(Level::ERROR);
-          println!("{}", error.message);
-        }
-
-        if errors.len() > 0 {
-          return;
-        }
-      }
-      Err(_) => {
-        println!("Error checking failed");
-      }
-    }
-
-    let success = type_script::generate_ts_types_file(
-      combined_vertex,
-      combined_fragment,
-      &vertex_path,
-      &output_folder,
+    generate(
+      file_path.clone(),
+      input_folder.clone(),
+      output_folder.clone(),
     );
-
-    if success {
-      print_level(log::Level::INFO);
-      print!(
-        "Files processed: {}",
-        file_path_relative_to_input
-          .to_str()
-          .unwrap()
-          .blue()
-          .underline()
-      );
-
-      println!(
-        " {}",
-        format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
-      );
-    }
   });
 
   let mut watcher = notify::recommended_watcher(move |res: notify::Result<Event>| match res {
@@ -182,6 +94,102 @@ pub fn start(args: Vec<String>) -> () {
 
   loop {
     std::thread::sleep(std::time::Duration::from_millis(100));
+  }
+}
+
+fn generate(file_path: PathBuf, input_folder: PathBuf, output_folder: PathBuf) {
+  // Update the file path to be relative to the input folder
+  let input_folder_canon = std::fs::canonicalize(&input_folder).unwrap();
+  let input_folder_parent = &input_folder_canon.parent().unwrap().to_path_buf();
+  let file_path_relative_to_input = file_path.strip_prefix(input_folder_parent).unwrap();
+
+  let (vertex_path, fragment_path) = match ensure_both_shader_files_exist(file_path.clone()) {
+    Ok((vertex_path, fragment_path)) => (vertex_path, fragment_path),
+    Err(err) => match err {
+      LoadShaderError::InvalidInputFile => {
+        // Ignore invalid input files
+        return;
+      }
+      LoadShaderError::MissingShaderPair(shader_type) => {
+        log_missing_shader_error(file_path_relative_to_input, shader_type);
+        return;
+      }
+    },
+  };
+
+  // Measure the time it takes to generate the types
+  let start = std::time::Instant::now();
+
+  let combined_vertex = if let Some(output) =
+    import_resolver::import_resolver::try_resolve_imports(&vertex_path, input_folder_parent)
+  {
+    output
+  } else {
+    return;
+  };
+
+  let combined_fragment = if let Some(output) =
+    import_resolver::import_resolver::try_resolve_imports(&fragment_path, input_folder_parent)
+  {
+    output
+  } else {
+    return;
+  };
+
+  match error_check(&combined_vertex) {
+    Ok(errors) => {
+      for error in &errors {
+        print_level(Level::ERROR);
+        println!("{}", error.message);
+      }
+
+      if errors.len() > 0 {
+        return;
+      }
+    }
+    Err(_) => {
+      println!("Error checking failed");
+    }
+  }
+
+  match error_check(&combined_fragment) {
+    Ok(errors) => {
+      for error in &errors {
+        print_level(Level::ERROR);
+        println!("{}", error.message);
+      }
+
+      if errors.len() > 0 {
+        return;
+      }
+    }
+    Err(_) => {
+      println!("Error checking failed");
+    }
+  }
+
+  let success = type_script::generate_ts_types_file(
+    combined_vertex,
+    combined_fragment,
+    &vertex_path,
+    &output_folder,
+  );
+
+  if success {
+    print_level(log::Level::INFO);
+    print!(
+      "Files processed: {}",
+      file_path_relative_to_input
+        .to_str()
+        .unwrap()
+        .blue()
+        .underline()
+    );
+
+    println!(
+      " {}",
+      format!("({:?})", start.elapsed()).truecolor(130, 130, 130)
+    );
   }
 }
 

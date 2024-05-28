@@ -1,3 +1,6 @@
+use crate::canonicalize;
+use crate::read_file;
+
 use super::import_resolver::ImportError;
 use glsl::parser::Parse as _;
 use glsl::syntax::{
@@ -7,10 +10,7 @@ use glsl::visitor::{Host, Visit, Visitor};
 use std::path::PathBuf;
 
 pub fn get_file_data(file_path: &PathBuf) -> Result<ImportedFile, ImportError> {
-  let contents = match std::fs::read_to_string(file_path) {
-    Ok(contents) => contents,
-    Err(_) => return Err(ImportError::FileNotFound(file_path.to_path_buf())),
-  };
+  let contents = read_file(file_path.to_str().unwrap().to_string());
 
   let ast = match ShaderStage::parse(&contents) {
     Ok(ast) => ast,
@@ -83,13 +83,9 @@ impl Visitor for ImportedFileVisitor {
   fn visit_preprocessor_include(&mut self, import: &PreprocessorInclude) -> Visit {
     let path = match &import.path {
       glsl::syntax::Path::Absolute(path) => PathBuf::from(path),
-      glsl::syntax::Path::Relative(path) => match self.path.join(path).canonicalize() {
-        Ok(path) => path,
-        Err(_) => {
-          self.error = Some(ImportError::InvalidFilePath(path.clone()));
-          return Visit::Parent;
-        }
-      },
+      glsl::syntax::Path::Relative(path) => {
+        PathBuf::from(canonicalize(self.path.join(path).to_str().unwrap()))
+      }
     };
 
     if self.imports.contains(&path) {

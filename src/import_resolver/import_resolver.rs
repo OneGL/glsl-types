@@ -4,7 +4,7 @@ use core::fmt;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use super::file_manager::FileManager;
 use super::graph::Graph;
@@ -39,7 +39,7 @@ pub enum ImportError {
   },
 }
 
-pub fn try_resolve_imports(file: &PathBuf, input_folder_parent: &Path) -> Option<String> {
+pub fn try_resolve_imports(file: &PathBuf, input_folder_parent: &PathBuf) -> Option<String> {
   match resolve_imports(file) {
     Ok(output) => Some(output),
     Err(err) => {
