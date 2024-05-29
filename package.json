@@ -4,5 +4,9 @@
   "scripts": {
     "build": "cargo build --target wasm32-unknown-unknown && wasm-bindgen --target nodejs --out-dir pkg ./target/wasm32-unknown-unknown/debug/glsl_types.wasm",
     "start": "npm run build && node index.js"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0"
   }
 }

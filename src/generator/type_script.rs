@@ -1,7 +1,10 @@
 use super::common;
 use crate::{
-  utils::log::{print_level, Level},
-  utils::get_shader_type::{get_shader_type, ShaderType},
+  console_log,
+  utils::{
+    get_shader_type::{get_shader_type, ShaderType},
+    log::{print_level, Level},
+  },
   write_file,
 };
 use glsl::syntax::TypeSpecifierNonArray;
@@ -17,8 +20,8 @@ pub fn generate_types_file(
   // Show a warning if the vertex shader has more than 16 attributes (This is webgl2)
   if shader_data.ins.len() > 16 && shader_data.shader_type == ShaderType::Vertex {
     print_level(Level::WARN);
-    println!(
-      "The vertex shader has more than 16 attributes. This can cause issues in some devices."
+    console_log(
+      "The vertex shader has more than 16 attributes. This can cause issues in some devices.",
     );
   }
 

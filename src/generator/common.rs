@@ -1,3 +1,4 @@
+use crate::console_log;
 use crate::utils::get_shader_type::ShaderType;
 use glsl::parser::Parse as _;
 use glsl::syntax::{
@@ -79,7 +80,7 @@ pub fn extract_shader_data(file: &String, shader_type: ShaderType) -> ShaderData
   match stage {
     Ok(stage) => stage.visit(&mut shader_data),
     Err(e) => {
-      println!("Error parsing the shader: {}", e);
+      console_log(&format!("Error parsing the shader: {}", e));
     }
   }
 

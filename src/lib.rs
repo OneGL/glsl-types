@@ -10,7 +10,8 @@ mod utils;
 #[wasm_bindgen]
 extern "C" {
   fn read_file(file: String) -> String;
-  fn log(message: String);
+  fn console_log(message: &str);
+  fn log_with_color(message: &str, color: &str);
   fn canonicalize(path: &str) -> String;
   fn file_exists(path: &str) -> bool;
   fn create_dir_all(path: &str);
@@ -18,8 +19,8 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn start_cli(file_path: String) {
-  cli::start(file_path);
+pub fn start_cli(file_path: String, input_folder: String, output_folder: String) {
+  cli::generate(file_path, input_folder, output_folder);
 }
 
 #[wasm_bindgen]

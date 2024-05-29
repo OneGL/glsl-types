@@ -1,4 +1,4 @@
-use colored::Colorize;
+use crate::log_with_color;
 
 pub enum Level {
   INFO,
@@ -9,13 +9,13 @@ pub enum Level {
 pub fn print_level(level: Level) {
   match level {
     Level::INFO => {
-      print!("{}", "[INFO]\t".green());
+      log_with_color("[INFO]\t", "green");
     }
     Level::WARN => {
-      print!("{}", "[WARN]\t".yellow());
+      log_with_color("[WARN]\t", "yellow");
     }
     Level::ERROR => {
-      print!("{}", "[ERROR]\t".red());
+      log_with_color("[ERROR]\t", "red");
     }
   }
 }

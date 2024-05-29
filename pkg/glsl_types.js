@@ -87,11 +87,17 @@ function getInt32Memory0() {
 }
 /**
 * @param {string} file_path
+* @param {string} input_folder
+* @param {string} output_folder
 */
-module.exports.start_cli = function(file_path) {
+module.exports.start_cli = function(file_path, input_folder, output_folder) {
     const ptr0 = passStringToWasm0(file_path, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
-    wasm.start_cli(ptr0, len0);
+    const ptr1 = passStringToWasm0(input_folder, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ptr2 = passStringToWasm0(output_folder, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len2 = WASM_VECTOR_LEN;
+    wasm.start_cli(ptr0, len0, ptr1, len1, ptr2, len2);
 };
 
 /**
@@ -134,6 +140,14 @@ module.exports.__wbg_readfile_123e0b6587b98e51 = function(arg0, arg1, arg2) {
     } finally {
         wasm.__wbindgen_free(deferred0_0, deferred0_1, 1);
     }
+};
+
+module.exports.__wbg_consolelog_88e4687dedd60d81 = function(arg0, arg1) {
+    console_log(getStringFromWasm0(arg0, arg1));
+};
+
+module.exports.__wbg_logwithcolor_7531dfe5923bc035 = function(arg0, arg1, arg2, arg3) {
+    log_with_color(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
 };
 
 module.exports.__wbg_canonicalize_85237431ce59dae8 = function(arg0, arg1, arg2) {

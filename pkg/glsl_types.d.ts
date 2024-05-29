@@ -2,8 +2,10 @@
 /* eslint-disable */
 /**
 * @param {string} file_path
+* @param {string} input_folder
+* @param {string} output_folder
 */
-export function start_cli(file_path: string): void;
+export function start_cli(file_path: string, input_folder: string, output_folder: string): void;
 /**
 * @param {string} file
 * @param {string} input_folder
