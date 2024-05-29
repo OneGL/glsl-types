@@ -1,9 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-* @returns {string}
+* @param {string} file_path
 */
-export function start_cli(): string;
+export function start_cli(file_path: string): void;
 /**
 * @param {string} file
 * @param {string} input_folder

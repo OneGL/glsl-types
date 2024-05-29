@@ -1,7 +1,7 @@
 pub const FRAGMENT_SHADER_EXTENSIONS: [&str; 2] = ["frag", "fs"];
 pub const VERTEX_SHADER_EXTENSIONS: [&str; 2] = ["vert", "vs"];
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ShaderType {
   Fragment,
   Vertex,

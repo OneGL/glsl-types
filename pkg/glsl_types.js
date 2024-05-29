@@ -86,23 +86,12 @@ function getInt32Memory0() {
     return cachedInt32Memory0;
 }
 /**
-* @returns {string}
+* @param {string} file_path
 */
-module.exports.start_cli = function() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.start_cli(retptr);
-        var r0 = getInt32Memory0()[retptr / 4 + 0];
-        var r1 = getInt32Memory0()[retptr / 4 + 1];
-        deferred1_0 = r0;
-        deferred1_1 = r1;
-        return getStringFromWasm0(r0, r1);
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
+module.exports.start_cli = function(file_path) {
+    const ptr0 = passStringToWasm0(file_path, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    wasm.start_cli(ptr0, len0);
 };
 
 /**
@@ -153,6 +142,19 @@ module.exports.__wbg_canonicalize_85237431ce59dae8 = function(arg0, arg1, arg2) 
     const len1 = WASM_VECTOR_LEN;
     getInt32Memory0()[arg0 / 4 + 1] = len1;
     getInt32Memory0()[arg0 / 4 + 0] = ptr1;
+};
+
+module.exports.__wbg_fileexists_f9343dc192ca1a53 = function(arg0, arg1) {
+    const ret = file_exists(getStringFromWasm0(arg0, arg1));
+    return ret;
+};
+
+module.exports.__wbg_createdirall_34bc01fd26c73840 = function(arg0, arg1) {
+    create_dir_all(getStringFromWasm0(arg0, arg1));
+};
+
+module.exports.__wbg_writefile_04125a5b42297615 = function(arg0, arg1, arg2, arg3) {
+    write_file(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
 };
 
 module.exports.__wbindgen_throw = function(arg0, arg1) {

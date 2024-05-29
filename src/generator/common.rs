@@ -10,29 +10,17 @@ pub fn capitalize_first_letter(s: &str) -> String {
 }
 
 #[derive(Clone, Debug)]
-pub struct Uniform {
-  pub name: String,
-  pub uniform_type: TypeSpecifierNonArray,
-}
-
-#[derive(Clone, Debug)]
-pub struct Varying {
-  pub name: String,
-  pub varying_type: TypeSpecifierNonArray,
-}
-
-#[derive(Clone, Debug)]
-pub struct Attribute {
-  pub name: String,
-  pub attribute_type: TypeSpecifierNonArray,
+pub struct TypedVariable {
+  pub identifier: String,
+  pub type_label: TypeSpecifierNonArray,
 }
 
 #[derive(Clone, Debug)]
 pub struct ShaderData {
-  pub uniforms: Vec<Uniform>,
-  pub varyings: Vec<Varying>,
-  pub attributes: Vec<Attribute>,
-  shader_type: ShaderType,
+  pub uniforms: Vec<TypedVariable>,
+  pub ins: Vec<TypedVariable>,
+  pub outs: Vec<TypedVariable>,
+  pub shader_type: ShaderType,
 }
 
 impl Visitor for ShaderData {
@@ -46,32 +34,24 @@ impl Visitor for ShaderData {
           .for_each(|qualifier| {
             if let TypeQualifierSpec::Storage(storage_qualifier) = qualifier {
               if storage_qualifier == StorageQualifier::Uniform {
-                self.uniforms.push(Uniform {
-                  name: name.as_str().to_string(),
-                  uniform_type: declaration.ty.ty.ty.clone(),
+                self.uniforms.push(TypedVariable {
+                  identifier: name.as_str().to_string(),
+                  type_label: declaration.ty.ty.ty.clone(),
                 });
               }
 
               match self.shader_type {
-                ShaderType::Fragment => {
-                  if storage_qualifier == StorageQualifier::In {
-                    self.varyings.push(Varying {
-                      name: name.as_str().to_string(),
-                      varying_type: declaration.ty.ty.ty.clone(),
-                    });
-                  }
-                }
-                ShaderType::Vertex => {
+                _ => {
                   if storage_qualifier == StorageQualifier::Out {
-                    self.varyings.push(Varying {
-                      name: name.as_str().to_string(),
-                      varying_type: declaration.ty.ty.ty.clone(),
+                    self.outs.push(TypedVariable {
+                      identifier: name.as_str().to_string(),
+                      type_label: declaration.ty.ty.ty.clone(),
                     });
                   }
                   if storage_qualifier == StorageQualifier::In {
-                    self.attributes.push(Attribute {
-                      name: name.as_str().to_string(),
-                      attribute_type: declaration.ty.ty.ty.clone(),
+                    self.ins.push(TypedVariable {
+                      identifier: name.as_str().to_string(),
+                      type_label: declaration.ty.ty.ty.clone(),
                     });
                   }
                 }
@@ -91,8 +71,8 @@ pub fn extract_shader_data(file: &String, shader_type: ShaderType) -> ShaderData
 
   let mut shader_data = ShaderData {
     uniforms: Vec::new(),
-    varyings: Vec::new(),
-    attributes: Vec::new(),
+    ins: Vec::new(),
+    outs: Vec::new(),
     shader_type,
   };
 

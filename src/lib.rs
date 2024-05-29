@@ -3,8 +3,6 @@
 use wasm_bindgen::prelude::*;
 
 mod cli;
-mod debounce;
-mod error_check;
 mod generator;
 mod import_resolver;
 mod log;
@@ -15,12 +13,15 @@ extern "C" {
   fn read_file(file: String) -> String;
   fn log(message: String);
   fn canonicalize(path: &str) -> String;
+  fn file_exists(path: &str) -> bool;
+  fn create_dir_all(path: &str);
+  fn write_file(path: &str, content: &str);
 }
 
-// #[wasm_bindgen]
-// pub fn start_cli() -> String {
-//   cli::start(args);
-// }
+#[wasm_bindgen]
+pub fn start_cli(file_path: String) {
+  cli::start(file_path);
+}
 
 #[wasm_bindgen]
 pub fn resolve_imports(file: String, input_folder: String) -> String {

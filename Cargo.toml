@@ -10,5 +10,4 @@ crate-type = ["cdylib"]
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 glsl = "7.0.0"
-notify = "6.1.1"
 wasm-bindgen = "0.2.92"
