@@ -1,6 +1,6 @@
 use super::common;
 use crate::{
-  log::{print_level, Level},
+  utils::log::{print_level, Level},
   utils::get_shader_type::{get_shader_type, ShaderType},
   write_file,
 };

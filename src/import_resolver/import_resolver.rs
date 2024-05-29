@@ -1,4 +1,4 @@
-use crate::log::{print_level, Level};
+use crate::utils::log::{print_level, Level};
 use colored::Colorize;
 use core::fmt;
 use std::collections::{HashMap, HashSet};

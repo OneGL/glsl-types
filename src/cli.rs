@@ -1,7 +1,6 @@
 use crate::generator::type_script;
 use crate::import_resolver;
-use crate::log;
-use crate::log::print_level;
+use crate::utils::log::{print_level, Level};
 use crate::{canonicalize, create_dir_all, file_exists};
 use clap::Parser;
 use colored::Colorize;
@@ -59,8 +58,6 @@ fn generate(file_path: PathBuf, input_folder: PathBuf, output_folder: PathBuf) {
   let input_folder_parent = &input_folder_canon.parent().unwrap().to_path_buf();
   let file_path_relative_to_input = file_path.strip_prefix(input_folder_parent).unwrap();
 
-  // Measure the time it takes to generate the types
-
   let combined_vertex = if let Some(output) =
     import_resolver::import_resolver::try_resolve_imports(&file_path, input_folder_parent)
   {
@@ -72,7 +69,7 @@ fn generate(file_path: PathBuf, input_folder: PathBuf, output_folder: PathBuf) {
   let success = type_script::generate_types_file(combined_vertex, &file_path, &output_folder);
 
   if success {
-    print_level(log::Level::INFO);
+    print_level(Level::INFO);
     print!(
       "Files processed: {}",
       file_path_relative_to_input

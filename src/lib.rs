@@ -5,7 +5,6 @@ use wasm_bindgen::prelude::*;
 mod cli;
 mod generator;
 mod import_resolver;
-mod log;
 mod utils;
 
 #[wasm_bindgen]
