@@ -1,7 +1,7 @@
 use crate::generator::type_script;
 use crate::utils::log::{print_level, Level};
 use crate::{canonicalize, create_dir_all, file_exists};
-use crate::{console_log, import_resolver};
+use crate::{logln, import_resolver};
 use std::path::PathBuf;
 
 pub fn generate(file_path: String, input_folder: String, output_folder: String) {
@@ -34,7 +34,7 @@ pub fn generate(file_path: String, input_folder: String, output_folder: String) 
 
   if success {
     print_level(Level::INFO);
-    console_log(&format!(
+    logln(&format!(
       "Files processed: {}",
       file_path_relative_to_input.to_str().unwrap()
     ));

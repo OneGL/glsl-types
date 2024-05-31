@@ -142,8 +142,12 @@ module.exports.__wbg_readfile_123e0b6587b98e51 = function(arg0, arg1, arg2) {
     }
 };
 
-module.exports.__wbg_consolelog_88e4687dedd60d81 = function(arg0, arg1) {
-    console_log(getStringFromWasm0(arg0, arg1));
+module.exports.__wbg_logln_14ed9a56894a4545 = function(arg0, arg1) {
+    logln(getStringFromWasm0(arg0, arg1));
+};
+
+module.exports.__wbg_log_4a2a556c03392f56 = function(arg0, arg1) {
+    log(getStringFromWasm0(arg0, arg1));
 };
 
 module.exports.__wbg_logwithcolor_7531dfe5923bc035 = function(arg0, arg1, arg2, arg3) {

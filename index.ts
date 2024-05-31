@@ -4,7 +4,8 @@ import chalk from "chalk";
 import glsl_types from "./pkg/glsl_types.js";
 import { program } from "commander";
 
-global.console_log = (message) => console.log(message);
+global.logln = (message) => console.log(message);
+global.log = (message) => process.stdout.write(message);
 global.log_with_color = (message, color) => {
   process.stdout.write(chalk[color](message));
 };

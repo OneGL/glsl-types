@@ -1,6 +1,6 @@
 use super::common;
 use crate::{
-  console_log,
+  log, log_with_color, logln,
   utils::{
     get_shader_type::{get_shader_type, ShaderType},
     log::{print_level, Level},
@@ -20,9 +20,9 @@ pub fn generate_types_file(
   // Show a warning if the vertex shader has more than 16 attributes (This is webgl2)
   if shader_data.ins.len() > 16 && shader_data.shader_type == ShaderType::Vertex {
     print_level(Level::WARN);
-    console_log(
-      "The vertex shader has more than 16 attributes. This can cause issues in some devices.",
-    );
+    log("The vertex shader ");
+    log_with_color(file_path.to_str().unwrap(), "blue");
+    logln(" has more than 16 attributes. This can cause issues in some devices.");
   }
 
   let mut output_file = String::new();

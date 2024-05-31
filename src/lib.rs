@@ -10,7 +10,8 @@ mod utils;
 #[wasm_bindgen]
 extern "C" {
   fn read_file(file: String) -> String;
-  fn console_log(message: &str);
+  fn logln(message: &str);
+  fn log(message: &str);
   fn log_with_color(message: &str, color: &str);
   fn canonicalize(path: &str) -> String;
   fn file_exists(path: &str) -> bool;

@@ -1,4 +1,5 @@
 use crate::canonicalize;
+use crate::file_exists;
 use crate::read_file;
 
 use super::import_resolver::ImportError;
@@ -10,7 +11,13 @@ use glsl::visitor::{Host, Visit, Visitor};
 use std::path::PathBuf;
 
 pub fn get_file_data(file_path: &PathBuf) -> Result<ImportedFile, ImportError> {
-  let contents = read_file(file_path.to_str().unwrap().to_string());
+  let file_path_string = file_path.to_str().unwrap().to_string();
+
+  if !file_exists(&file_path_string) {
+    return Err(ImportError::FileNotFound(file_path.to_path_buf()));
+  }
+
+  let contents = read_file(file_path_string);
 
   let ast = match ShaderStage::parse(&contents) {
     Ok(ast) => ast,
@@ -46,6 +53,7 @@ pub struct ImportedFile {
 
 struct ImportedFileVisitor {
   path: PathBuf,
+  parent_path: PathBuf,
   structs: Vec<String>,
   functions: Vec<String>,
   imports: Vec<PathBuf>,
@@ -55,7 +63,8 @@ struct ImportedFileVisitor {
 impl ImportedFileVisitor {
   fn new(path: &PathBuf) -> Self {
     Self {
-      path: path.parent().unwrap().to_path_buf(),
+      path: path.clone(),
+      parent_path: path.parent().unwrap().to_path_buf(),
       structs: Vec::new(),
       functions: Vec::new(),
       imports: Vec::new(),
@@ -84,12 +93,12 @@ impl Visitor for ImportedFileVisitor {
     let path = match &import.path {
       glsl::syntax::Path::Absolute(path) => PathBuf::from(path),
       glsl::syntax::Path::Relative(path) => {
-        PathBuf::from(canonicalize(self.path.join(path).to_str().unwrap()))
+        PathBuf::from(canonicalize(self.parent_path.join(path).to_str().unwrap()))
       }
     };
 
     if self.imports.contains(&path) {
-      self.error = Some(ImportError::DuplicateImport(path));
+      self.error = Some(ImportError::DuplicateImport(self.path.clone(), path));
       return Visit::Parent;
     }
 
