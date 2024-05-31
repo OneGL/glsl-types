@@ -1,16 +1,16 @@
 use crate::log_with_color;
 
 pub enum Level {
-  INFO,
+  // INFO,
   WARN,
   ERROR,
 }
 
 pub fn print_level(level: Level) {
   match level {
-    Level::INFO => {
-      log_with_color("[INFO]\t", "green");
-    }
+    // Level::INFO => {
+    //   log_with_color("[INFO]\t", "green");
+    // }
     Level::WARN => {
       log_with_color("[WARN]\t", "yellow");
     }

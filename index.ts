@@ -35,26 +35,30 @@ program
 
 program.parse();
 
-const SHADER_EXTENSIONS = [".vert", ".frag", ".vs", ".fs", ".glsl"];
+const SHADER_EXTENSIONS = [".vert", ".frag", ".vs", ".fs"];
 
 const options = program.opts();
 
 if (options.watch) {
-  process.stdout.write(chalk["green"]("Watching for changes\n"));
+  process.stdout.write(chalk.green("Watching for changes\n"));
   fs.watch(options.input, { recursive: true }, (eventType, filename) => {
+    console.log("File change detected");
     if (!filename) return;
     filename = path.resolve(options.input, filename);
 
     if (SHADER_EXTENSIONS.includes(path.extname(filename))) {
-      glslTypes.start_cli(
-        filename,
-        options.input,
-        options.output
+      const start = performance.now();
+      glslTypes.start_cli(filename, options.input, options.output);
+      const end = performance.now();
+
+      process.stdout.write(chalk.green("[INFO]\t"));
+      process.stdout.write(
+        `File processed ${chalk.blue(path.relative(options.input, filename))}`
       );
+      process.stdout.write(chalk.gray(` (${(end - start).toFixed(2)}ms)\n`));
     }
   });
 } else {
-
   if (!options.file) {
     console.error("Please provide a file to process");
     process.exit(1);
@@ -65,9 +69,5 @@ if (options.watch) {
     process.exit(1);
   }
 
-  glslTypes.start_cli(
-    options.file,
-    options.input,
-    options.output
-  );
+  glslTypes.start_cli(options.file, options.input, options.output);
 }

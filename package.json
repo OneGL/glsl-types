@@ -11,7 +11,8 @@
     "rename-cjs": "for file in pkg/*.js; do mv \"$file\" \"${file%.js}.cjs\"; done",
     "cp-pkg": "cp -r pkg dist",
     "build": "npm run build-ts && npm run build-rust && npm run rename-cjs && npm run cp-pkg",
-    "start": "npm run build && node dist/index.js"
+    "start": "npm run build && node dist/index.js",
+    "update-cli": "npm unlink -g glsl-types && npm run build && npm link"
   },
   "dependencies": {
     "@types/node": "^20.12.13",

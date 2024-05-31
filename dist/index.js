@@ -30,16 +30,22 @@ program
     .option("-f, --file <file>", "File to process")
     .option("-w, --watch", "Watch for changes", false);
 program.parse();
-var SHADER_EXTENSIONS = [".vert", ".frag", ".vs", ".fs", ".glsl"];
+var SHADER_EXTENSIONS = [".vert", ".frag", ".vs", ".fs"];
 var options = program.opts();
 if (options.watch) {
-    process.stdout.write(chalk["green"]("Watching for changes\n"));
+    process.stdout.write(chalk.green("Watching for changes\n"));
     fs.watch(options.input, { recursive: true }, function (eventType, filename) {
+        console.log("File change detected");
         if (!filename)
             return;
         filename = path.resolve(options.input, filename);
         if (SHADER_EXTENSIONS.includes(path.extname(filename))) {
+            var start = performance.now();
             glslTypes.start_cli(filename, options.input, options.output);
+            var end = performance.now();
+            process.stdout.write(chalk.green("[INFO]\t"));
+            process.stdout.write("File processed ".concat(chalk.blue(path.relative(options.input, filename))));
+            process.stdout.write(chalk.gray(" (".concat((end - start).toFixed(2), "ms)\n")));
         }
     });
 }
