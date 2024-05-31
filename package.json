@@ -1,13 +1,19 @@
 {
   "name": "glsl-types",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "build": "cargo build --target wasm32-unknown-unknown && wasm-bindgen --target nodejs --out-dir pkg ./target/wasm32-unknown-unknown/debug/glsl_types.wasm",
-    "start": "npm run build && node index.js"
+    "build-ts": "tsc",
+    "build-rust": "cargo build --target wasm32-unknown-unknown && wasm-bindgen --target nodejs --out-dir pkg ./target/wasm32-unknown-unknown/debug/glsl_types.wasm",
+    "rename-cjs": "for file in pkg/*.js; do mv \"$file\" \"${file%.js}.cjs\"; done",
+    "cp-pkg": "cp -r pkg dist",
+    "build": "npm run build-ts && npm run build-rust && npm run rename-cjs && npm run cp-pkg",
+    "start": "npm run build && node dist/index.js"
   },
   "dependencies": {
     "@types/node": "^20.12.13",
     "chalk": "^5.3.0",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "typescript": "^5.4.5"
   }
 }
