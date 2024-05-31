@@ -2,6 +2,9 @@
   "name": "glsl-types",
   "version": "0.0.0",
   "type": "module",
+  "bin": {
+    "glsl": "dist/index.js"
+  },
   "scripts": {
     "build-ts": "tsc",
     "build-rust": "cargo build --target wasm32-unknown-unknown && wasm-bindgen --target nodejs --out-dir pkg ./target/wasm32-unknown-unknown/debug/glsl_types.wasm",

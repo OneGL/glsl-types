@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
@@ -28,6 +30,7 @@ global.write_file = (file, content) => fs.writeFileSync(file, content);
 program
   .option("-i, --input <input>", "Input directory", "./shaders")
   .option("-o, --output <output>", "Output directory", "./output")
+  .option("-f, --file <file>", "File to process")
   .option("-w, --watch", "Watch for changes", false);
 
 program.parse();
@@ -40,18 +43,30 @@ if (options.watch) {
   process.stdout.write(chalk["green"]("Watching for changes\n"));
   fs.watch(options.input, { recursive: true }, (eventType, filename) => {
     if (!filename) return;
+    filename = path.resolve(options.input, filename);
 
     if (SHADER_EXTENSIONS.includes(path.extname(filename))) {
       glslTypes.start_cli(
-        "/home/luis/github/onegl/glsl-types/shaders/program1.vert",
+        filename,
         options.input,
         options.output
       );
     }
   });
 } else {
+
+  if (!options.file) {
+    console.error("Please provide a file to process");
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(options.file)) {
+    console.error(`File ${options.file} does not exist`);
+    process.exit(1);
+  }
+
   glslTypes.start_cli(
-    "/home/luis/github/onegl/glsl-types/shaders/program1.vert",
+    options.file,
     options.input,
     options.output
   );
