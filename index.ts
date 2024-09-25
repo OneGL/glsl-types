@@ -7,24 +7,16 @@ import { program } from "commander";
 // @ts-ignore
 import * as glslTypes from "./pkg/glsl_types.cjs";
 
-// @ts-ignore
 global.logln = (message) => console.log(message);
-// @ts-ignore
 global.log = (message) => process.stdout.write(message);
-// @ts-ignore
 global.log_with_color = (message, color) => {
   // @ts-ignore
   process.stdout.write(chalk[color](message));
 };
-// @ts-ignore
 global.read_file = (file) => fs.readFileSync(file, "utf8");
-// @ts-ignore
 global.canonicalize = (file) => path.resolve(file);
-// @ts-ignore
 global.file_exists = (file) => fs.existsSync(file);
-// @ts-ignore
 global.create_dir_all = (dir) => fs.mkdirSync(dir, { recursive: true });
-// @ts-ignore
 global.write_file = (file, content) => fs.writeFileSync(file, content);
 
 program
@@ -70,4 +62,15 @@ if (options.watch) {
   }
 
   glslTypes.start_cli(options.file, options.input, options.output);
+}
+
+declare global {
+  var logln: (message: string) => void;
+  var log: (message: string) => void;
+  var log_with_color: (message: string, color: string) => void;
+  var read_file: (file: string) => string;
+  var canonicalize: (file: string) => string;
+  var file_exists: (file: string) => boolean;
+  var create_dir_all: (dir: string) => void;
+  var write_file: (file: string, content: string) => void;
 }
