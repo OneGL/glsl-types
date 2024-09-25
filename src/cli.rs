@@ -1,6 +1,6 @@
 use crate::generator::type_script;
-use crate::{canonicalize, create_dir_all, file_exists};
 use crate::import_resolver;
+use crate::{canonicalize, create_dir_all, file_exists};
 use std::path::PathBuf;
 
 pub fn generate(file_path: String, input_folder: String, output_folder: String) {

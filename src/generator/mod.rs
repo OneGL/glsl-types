@@ -1,2 +1,2 @@
-pub mod type_script;
 pub mod common;
+pub mod type_script;

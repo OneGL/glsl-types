@@ -4,9 +4,7 @@ use crate::read_file;
 
 use super::import_resolver::ImportError;
 use glsl::parser::Parse as _;
-use glsl::syntax::{
-  FunctionDefinition, PreprocessorInclude, ShaderStage, StructSpecifier, TranslationUnit,
-};
+use glsl::syntax::{FunctionDefinition, PreprocessorInclude, ShaderStage, StructSpecifier};
 use glsl::visitor::{Host, Visit, Visitor};
 use std::path::PathBuf;
 
@@ -32,22 +30,18 @@ pub fn get_file_data(file_path: &PathBuf) -> Result<ImportedFile, ImportError> {
   }
 
   return Ok(ImportedFile {
-    path: file_path.clone(),
     structs: visitor.structs,
     functions: visitor.functions,
     imports: visitor.imports,
-    ast,
     contents,
   });
 }
 
 #[derive(Clone, Debug)]
 pub struct ImportedFile {
-  pub path: PathBuf,
   pub structs: Vec<String>,
   pub functions: Vec<String>,
   pub imports: Vec<PathBuf>,
-  pub ast: TranslationUnit,
   pub contents: String,
 }
 
